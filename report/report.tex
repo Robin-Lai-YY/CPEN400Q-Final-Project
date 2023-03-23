@@ -1,15 +1,18 @@
 \documentclass{article}
 
-\usepackage[margin=1in]{geometry}
-\usepackage{unicode-math}
-\usepackage{eulervm}
 \usepackage{fontspec}
-\usepackage{minted}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
 \usepackage{hyperref}
 \usepackage[backend=biber]{biblatex}
 \usepackage{tikz}
+\usepackage{expl3}
+\usepackage{euler-math}
+\usepackage{minted}
 
 \usetikzlibrary{quantikz}
+
+\input{macros.tex}
 
 \setmainfont{TeX Gyre Pagella}
 \setmonofont{IBM Plex Mono}
@@ -30,7 +33,6 @@
 \section{Introduction}
 
 \begin{minted}{python}
-# Example code
 import numpy as np
 \end{minted}
 
