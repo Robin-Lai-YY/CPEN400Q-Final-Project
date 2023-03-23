@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "quantumgan"
+version = "0.1.0"
+description = ""
+authors = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pennylane = "^0.29.1"
+jax = "^0.4.6"
+jaxlib = "^0.4.6"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

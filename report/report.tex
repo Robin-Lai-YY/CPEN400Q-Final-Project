@@ -1,0 +1,49 @@
+\documentclass{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{unicode-math}
+\usepackage{eulervm}
+\usepackage{fontspec}
+\usepackage{minted}
+\usepackage{hyperref}
+\usepackage[backend=biber]{biblatex}
+\usepackage{tikz}
+
+\usetikzlibrary{quantikz}
+
+\setmainfont{TeX Gyre Pagella}
+\setmonofont{IBM Plex Mono}
+
+\addbibresource{cpen400q.bib}
+
+\title{CPEN 400Q project report\\
+  Experimental Quantum GANs}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+
+\begin{minted}{python}
+# Example code
+import numpy as np
+\end{minted}
+
+\begin{quantikz}[slice all,remove end slices=1,slice
+    titles=slice \col,slice style=blue,slice label style
+    ={inner sep=1pt,anchor=south west,rotate=40}]
+  & \gate{H} & \ctrl{1} & \meter{} && \\
+  & \qw & \targ{} & \ctrl{1} & \gate{H} & \qw \\
+  & \qw & \qw & \targ{} & \qw & \qw
+\end{quantikz}
+
+Example citation\autocite{huang2021}.
+
+\printbibliography
+
+\end{document}

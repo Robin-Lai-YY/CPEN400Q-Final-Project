@@ -1,0 +1,98 @@
+\documentclass{beamer}
+
+\usepackage{unicode-math}
+\usepackage{eulervm}
+\usepackage{fontspec}
+\usepackage{minted}
+\usepackage{hyperref}
+\usepackage[backend=biber]{biblatex}
+\usepackage{tikz}
+
+\usetikzlibrary{quantikz}
+
+\usefonttheme{professionalfonts}
+\setsansfont{TeX Gyre Heros}
+\setmonofont{IBM Plex Mono}
+
+\newfontfamily\headingfont{TeX Gyre Heros Bold}
+\setbeamerfont{title}{family=\headingfont}
+\setbeamerfont{frametitle}{family=\headingfont}
+\setbeamerfont{math text}{series=\fontseries{AMS Euler}}
+
+\setbeamertemplate{title page}[default][left]
+\setbeamercolor{frametitle}{fg=black}
+\setbeamertemplate{items}[circle]
+\setbeamercolor{item}{fg=black}
+
+\setbeamertemplate{headline}[default]
+
+\setbeamertemplate{navigation symbols}{}
+\useoutertheme{miniframes}
+\setbeamercolor*{mini frame}{fg=black}
+\makeatletter
+\setbeamertemplate{headline}{%
+  \vspace{1em}%
+  \insertnavigation{\paperwidth}%
+  \vspace{1em}%
+}%
+\setbeamertemplate{footline}{%
+  \usebeamerfont{footline}%
+  \usebeamercolor[fg]{footline}%
+  \hfill%
+  \insertframenumber\hspace{1em}%
+  \vspace{1em}%
+}%
+
+\makeatother
+
+\addbibresource{cpen400q.bib}
+
+\title{Experimental Quantum GANs}
+\subtitle{Subtitle}
+\author{}
+\date{}
+
+\begin{document}
+
+\frame{\titlepage}
+
+\section{Section 1}
+
+\begin{frame}
+  \frametitle{Example slide}
+  \begin{itemize}[<+->]
+  \item Example slide
+  \item Example slide with appearing text\autocite{huang2021}.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Example slide with code}
+  \begin{minted}{python}
+    # Example code
+    import numpy as np
+  \end{minted}
+\end{frame}
+
+\section{Section 2}
+
+\begin{frame}
+  \frametitle{Example slide with diagram}
+  \begin{center}
+    \begin{quantikz}[slice all,remove end slices=1,slice
+        titles=slice \col,slice style=blue,slice label style
+        ={inner sep=1pt,anchor=south west,rotate=40}]
+      & \gate{H} & \ctrl{1} & \meter{} && \\
+      & \qw & \targ{} & \ctrl{1} & \gate{H} & \qw \\
+      & \qw & \qw & \targ{} & \qw & \qw
+    \end{quantikz}
+  \end{center}
+\end{frame}
+
+
+\begin{frame}[allowframebreaks]
+  \frametitle{References}
+  \printbibliography
+\end{frame}
+
+\end{document}
