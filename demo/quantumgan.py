@@ -6,6 +6,7 @@ import pennylane as qml
 import equinox as eqx
 import jax
 import jax.numpy as jnp
+import numpy as np
 from pennylane.operation import Operation
 from jaxtyping import Array, Float, PyTree
 
@@ -15,12 +16,20 @@ def multilayer_pqc(
     wires,
     rotation: Operation = qml.RY,
     entangle: Operation = qml.CZ,
+    layout: str = "staircase",
 ):
+    np.random.seed(12345)       # hack
     for layer in weights:
         for r, w in zip(layer, wires):
             rotation(r, w)
-        for control, target in zip(wires, wires[1:]):
-            entangle((control, target))
+        if layout == "staircase":
+            for control, target in zip(wires, wires[1:]):
+                entangle((control, target))
+        elif layout == "random":
+            idxs = np.random.permutation(len(wires))
+            wires_permuted = [wires[i] for i in idxs]
+            for control, target in zip(wires_permuted, wires_permuted[1:]):
+                entangle((control, target))
 
 
 def format_wires(name: str, num: int):
@@ -42,6 +51,9 @@ class BatchGAN:
         gen_layers: int,
         dis_ancillary: int,
         dis_layers: int,
+        rotations=qml.RY,
+        entanglers=qml.CZ,
+        layout="staircase",
     ):
         assert jnp.log2(features) == int(
             jnp.log2(features)
@@ -50,6 +62,10 @@ class BatchGAN:
         self.gen_layers = gen_layers
         self.dis_layers = dis_layers
         self.postselect_probs = features
+
+        self.rotations = rotations
+        self.entanglers = entanglers
+        self.layout = layout
 
         self.gen_ancillary = format_wires("ag", gen_ancillary)
         self.dis_ancillary = format_wires("ad", dis_ancillary)
@@ -63,7 +79,7 @@ class BatchGAN:
         self.qnode_train_real = qml.QNode(
             self.circuit_train_real, self.qdev, interface="jax"
         )
-        self.qnode_gen = qml.QNode(self.circuit_gen, self.qdev, interface="jax")
+        self.qnode_gen = qml.QNode(self.circuit_generate, self.qdev, interface="jax")
 
     def init_params(self, key):
         gen_key, dis_key = jax.random.split(key)
@@ -95,12 +111,12 @@ class BatchGAN:
     def generate(self, gen_params, key, batch):
         latent = self.gen_latent(key, batch)
         probs = jax.vmap(lambda x: self.qnode_gen(gen_params, x))(latent)
-        probs = probs[:,0:self.postselect_probs]
+        probs = probs[:, 0 : self.postselect_probs]
         return jax.vmap(lambda p: p / jnp.sum(p))(probs)
 
     def postselect(self, probs):
         # Postselect for ancillary bits all being 0
-        probs = probs[0:self.postselect_probs]
+        probs = probs[0 : self.postselect_probs]
         # Add up all probabilities for the final bit of the discriminator output being 1
         return jnp.sum(probs[0::2]) / jnp.sum(probs)
 
@@ -120,28 +136,41 @@ class BatchGAN:
         _, d_fake = self.predict(gen_params, dis_params, latent, example)
         return bce_loss(d_fake, 0.0)
 
+    def circuit_gen(self, gen_params, latent):
+        qml.AngleEmbedding(latent, self.gen_ancillary + self.feature_reg, rotation="Y")
+        multilayer_pqc(
+            gen_params,
+            self.gen_ancillary + self.feature_reg,
+            self.rotations,
+            self.entanglers,
+            self.layout,
+        )
+
+    def circuit_dis(self, dis_params):
+        multilayer_pqc(
+            dis_params,
+            self.dis_ancillary + self.feature_reg,
+            self.rotations,
+            self.entanglers,
+            self.layout,
+        )
+
     def circuit_train_fake(self, gen_params, dis_params, latent):
-        # qml.AngleEmbedding(latent, self.gen_ancillary + self.feature_reg, rotation="Y")
-        for x, w in zip(latent, self.gen_ancillary + self.feature_reg):
-            qml.RY(x, w)
-        multilayer_pqc(gen_params, self.gen_ancillary + self.feature_reg)
-        multilayer_pqc(dis_params, self.dis_ancillary + self.feature_reg)
+        self.circuit_gen(gen_params, latent)
+        self.circuit_dis(dis_params)
         return qml.probs()
 
     def circuit_train_real(self, gen_params, dis_params, features):
         qml.AmplitudeEmbedding(jnp.sqrt(features / jnp.sum(features)), self.feature_reg)
-        multilayer_pqc(dis_params, self.dis_ancillary + self.feature_reg)
+        self.circuit_dis(dis_params)
         return qml.probs()
 
-    def circuit_gen(self, gen_params, latent):
-        # qml.AngleEmbedding(latent, self.gen_ancillary + self.feature_reg, rotation="Y")
-        for x, w in zip(latent, self.gen_ancillary + self.feature_reg):
-            qml.RY(x, w)
-        multilayer_pqc(gen_params, self.gen_ancillary + self.feature_reg)
+    def circuit_generate(self, gen_params, latent):
+        self.circuit_gen(gen_params, latent)
         return qml.probs()
 
     def draw(self, gen_params, dis_params):
-        qml.draw_mpl(self.qnode_train_fake)(
+        return qml.draw_mpl(self.qnode_train_fake)(
             gen_params,
             dis_params,
             jnp.zeros(len(self.gen_ancillary) + len(self.feature_reg)),
