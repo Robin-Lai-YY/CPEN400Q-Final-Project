@@ -1,0 +1,75 @@
+% Sam
+% - maybe MPQCs?
+
+% \begin{frame}
+%   \frametitle{Density matrices recap}
+
+%   In a pure state $\ket\psi$, the expected value of an observable $A$ is:
+
+%   \[ \expected{A}_\psi = \braopket{\psi}{A}{\psi} \]
+
+%   The probability of measuring the system in some basis can be found by using an
+%   orthogonal projector:
+
+%   \[ \Pi_i = \proj{\phi_i} \]
+
+%   In a mixed state $\rho$, the expected value looks like:
+
+%   \[ \expected{A}_\psi = \Tr(A \rho) = \sum_i \braopket{i}{A \rho}{i} \]
+
+%   (Trace is independent of basis---can sum over any basis $\{\ket{i}\}$)
+
+% \end{frame}
+
+\begin{frame}
+  \frametitle{Partial trace}
+
+  In a mixed state $\rho$, the expected value looks like:
+
+  \[ \expected{A}_\psi = \Tr(A \rho) = \sum_i \braopket{i}{A \rho}{i} \]
+
+  If a measurement traces over a complete set of basis states for the space
+  $\mathcal{H}$, what if we want to discard the subsystem $\mathcal{A}$ of
+  $\mathcal{H}_{\mathcal{A}} \otimes \mathcal{H}_{\mathcal{B}}$?
+
+  \[ \Tr_{\mathcal{A}}(\rho) =
+  \sum_i (\bra{i}_{\mathcal{A}} \otimes I_{\mathcal{B}})
+  \ \rho\ (\ket{i}_{\mathcal{A}} \otimes I_{\mathcal{B}})\]
+
+  By \emph{tracing out} the system $\mathcal{A}$, we project onto a basis for
+  $\mathcal{A}$ while leaving $\mathcal{B}$ untouched ($I_{\mathcal{B}}$).
+
+  Each term of the sum leaves us with an \emph{operator} instead of a scalar.
+  This is the \textbf{partial trace}\autocite{quic06}.
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{Partial measurement}
+
+  Let's try the partial trace:
+
+ \[\Tr_{\mathcal{A}}((\Pi_i \otimes I_{\mathcal{B}}) \rho)
+    = \sum_j (\bra{j} \otimes I) (\Pi_i \otimes I) \rho (\ket{j} \otimes I)\]
+
+  Notice that $\bra{j} \Pi_j$ is $0$ if $i\neq j$, and $\bra{j}$ otherwise!
+
+  \[ \rho' = \frac{\Tr_{\mathcal{A}}((\Pi_i\otimes I_{\mathcal{B}}) \rho)}
+    {\LaTeXunderbrace{ \Tr((\Pi_i\otimes I_{\mathcal{B}})\rho) }_{\text{magic}}}\]
+
+  Making a partial measurement on our system transforms the density matrix
+  \emph{non-linearly}!
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{Multilayer parameterized quantum circuits}
+
+    \begin{center}
+        % \begin{quantikz}
+        % \lstick{$\mathcal{A} \ket{0}$} & \gate{R} & \gate[wires=2]{$U_E$} & \qw \\
+        % \lstick{$\ket{0}$} & \gate{R} &  & \qw \\
+        % \lstick{$\ket{0}$} & \gate{R} &  & \qw \\
+        % \end{quantikz}
+    \end{center}
+\end{frame}
