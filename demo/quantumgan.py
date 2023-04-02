@@ -61,10 +61,11 @@ class BatchGAN:
         ), "feature dimension must be a power of 2"
 
         self.features = features
+        self.indices = 2 ** index_qubits
         self.index_qubits = index_qubits
         self.gen_layers = gen_layers
         self.dis_layers = dis_layers
-        self.postselect_probs = features * (2 ** index_qubits)
+        self.postselect_probs = features * self.indices
 
         self.rotations = rotations
         self.entanglers = entanglers
@@ -166,7 +167,10 @@ class BatchGAN:
         return qml.probs()
 
     def circuit_train_real(self, gen_params, dis_params, features):
-        qml.AmplitudeEmbedding(jnp.sqrt(features / jnp.sum(features)), self.feature_reg)
+        embedding_wires = self.index_reg + self.feature_reg
+        features_normalized = features / jnp.sum(features, axis=1, keepdims=True)
+        features_flatten = features_normalized.reshape(2 ** len(embedding_wires))
+        qml.AmplitudeEmbedding(jnp.sqrt(features_flatten), embedding_wires)
         self.circuit_dis(dis_params)
         return qml.probs()
 
