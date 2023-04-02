@@ -51,6 +51,7 @@ class BatchGAN:
         gen_layers: int,
         dis_ancillary: int,
         dis_layers: int,
+        index_qubits: int = 0,
         rotations=qml.RY,
         entanglers=qml.CZ,
         layout="staircase",
@@ -59,18 +60,21 @@ class BatchGAN:
             jnp.log2(features)
         ), "feature dimension must be a power of 2"
 
+        self.features = features
+        self.index_qubits = index_qubits
         self.gen_layers = gen_layers
         self.dis_layers = dis_layers
-        self.postselect_probs = features
+        self.postselect_probs = features * (2 ** index_qubits)
 
         self.rotations = rotations
         self.entanglers = entanglers
         self.layout = layout
 
+        self.index_reg = format_wires("i", index_qubits)
         self.gen_ancillary = format_wires("ag", gen_ancillary)
         self.dis_ancillary = format_wires("ad", dis_ancillary)
         self.feature_reg = format_wires("f", int(jnp.log2(features)))
-        wires = self.gen_ancillary + self.dis_ancillary + self.feature_reg
+        wires = self.gen_ancillary + self.dis_ancillary + self.index_reg + self.feature_reg
 
         self.qdev = qml.device("default.qubit", wires=wires)
         self.qnode_train_fake = qml.QNode(
@@ -102,7 +106,7 @@ class BatchGAN:
     def gen_latent(self, key, batch):
         return jax.random.uniform(
             key,
-            (batch, len(self.gen_ancillary) + len(self.feature_reg)),
+            (batch, len(self.gen_ancillary) + len(self.feature_reg) + len(self.index_reg)),
             jnp.float32,
             0,
             jnp.pi / 2,
@@ -111,7 +115,7 @@ class BatchGAN:
     def generate(self, gen_params, key, batch):
         latent = self.gen_latent(key, batch)
         probs = jax.vmap(lambda x: self.qnode_gen(gen_params, x))(latent)
-        probs = probs[:, 0 : self.postselect_probs]
+        probs = probs[:, 0 : self.postselect_probs].reshape(batch, 2 ** self.index_qubits, self.features)
         return jax.vmap(lambda p: p / jnp.sum(p))(probs)
 
     def postselect(self, probs):
@@ -137,7 +141,8 @@ class BatchGAN:
         return bce_loss(d_fake, 0.0)
 
     def circuit_gen(self, gen_params, latent):
-        qml.AngleEmbedding(latent, self.gen_ancillary + self.feature_reg, rotation="Y")
+        wires = self.gen_ancillary + self.index_reg + self.feature_reg
+        qml.AngleEmbedding(latent, wires, rotation="Y")
         multilayer_pqc(
             gen_params,
             self.gen_ancillary + self.feature_reg,
@@ -173,5 +178,5 @@ class BatchGAN:
         return qml.draw_mpl(self.qnode_train_fake)(
             gen_params,
             dis_params,
-            jnp.zeros(len(self.gen_ancillary) + len(self.feature_reg)),
+            jnp.zeros(len(self.gen_ancillary) + len(self.index_reg) + len(self.feature_reg)),
         )
