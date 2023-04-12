@@ -1,9 +1,9 @@
-\begin{frame}{Quantum GANs - Overview}
+\begin{frame}{Quantum GANs - Overview}{\normalfont $N=$ \# of qubits, $M=$ \# of features}
     \begin{center}
         \begin{tikzpicture}
             \node (figure) {\includegraphics[width=\linewidth,clip,trim=2.25cm 17.45cm 2.3cm 2.22cm,page=2]{figures/original-paper.pdf}};
-            \node[xshift=-90, yshift=70] at (figure) {\tiny N 1 log M};
-            % \node[xshift=-70, yshift=60] at (figure) {\tiny Batch GAN};
+            \node[xshift=-86, yshift=68] at (figure) {\tiny $N < \log_2 M$};
+            \node[xshift=-35, yshift=68] at (figure) {\tiny $N > \log_2 M$};
         \end{tikzpicture}
         % \hspace{-\linewidth}\frame{
         %     \begin{tikzpicture}
@@ -17,12 +17,12 @@
     \end{center}
 \end{frame}
 
-\begin{frame}{Quantum GANs - Details}
+\begin{frame}{Quantum GANs - Details}{\normalfont\scriptsize Top: Patch GAN Sub-Generator,\hspace{5pt} Bottom: Batch GAN Generator and Discriminator}
     \begin{center}
         \begin{tikzpicture}
             \node (figure) {\includegraphics[height=0.9\textheight,clip,trim=1.5cm 14cm 8.5cm 1.7cm,page=10]{figures/original-paper.pdf}};
-            \node[xshift=-70, yshift=102] at (figure) {\tiny Patch GAN};
-            \node[xshift=-70, yshift=-5] at (figure) {\tiny Batch GAN};
+            % \node[xshift=-52, yshift=107] at (figure) {\tiny };
+            % \node[xshift=-34, yshift=2] at (figure) {\tiny Batch GAN Generator and Discriminator};
         \end{tikzpicture}
     \end{center}
 \end{frame}

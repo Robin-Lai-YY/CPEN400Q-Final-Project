@@ -11,7 +11,7 @@
 \usepackage{bm}
 \usepackage{neuralnetwork}
 \usepackage{graphicx}
-%% \usepackage{minted}
+\usepackage{minted}
 
 \usetikzlibrary{quantikz}
 \usetikzlibrary{fadings}
@@ -110,19 +110,31 @@
 \begin{columns}
 \column{0.5\textwidth}
 \centering
-    \includegraphics[width=\linewidth]{figures/training_loss_1.pdf}
-    \includegraphics[width=\linewidth]{figures/examples_1.pdf}
+    \includegraphics[width=0.95\linewidth]{figures/training_loss_1.pdf}
+    \includegraphics[width=0.95\linewidth]{figures/examples_1.pdf}
 
 \column{0.5\textwidth}
 \centering
-    \includegraphics[width=\linewidth]{figures/training_loss_2.pdf}
-    \includegraphics[width=\linewidth]{figures/examples_2.pdf}
+    \includegraphics[width=0.95\linewidth]{figures/training_loss_2.pdf}
+    \includegraphics[width=0.95\linewidth]{figures/examples_2.pdf}
 \end{columns}
 
 \end{frame}
 
-\begin{frame}{Software design and implementation}
-From rubric: A detailed overview of the software is provided, with key design decisions outlined
+\begin{frame}[fragile]{Software design and implementation}
+\begin{itemize}
+    \item JAX throughout: just take gradients of the loss methods.
+    \item Simple, but extensible API implementing completely quantum GANs (generator and discriminator):
+    \begin{minted}[fontsize=\footnotesize]{python}
+g = gan.BatchGAN(4, 1, 4, 1, 5,
+                 entanglers=qml.CNOT, layout="random")
+g.draw(...)
+    \end{minted}
+    \begin{center}
+        \includegraphics[width=0.9\linewidth]{figures/gates.pdf}
+    \end{center}
+    \item Deterministic randomness for repeatable experiments!
+\end{itemize}
 \end{frame}
 
 \begin{frame}[allowframebreaks]
