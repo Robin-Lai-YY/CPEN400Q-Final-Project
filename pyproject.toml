@@ -6,19 +6,19 @@ authors = []
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = ">=3.10,<3.11"
 pennylane = "^0.29.1"
 jax = "^0.4.8"
 jaxlib = "^0.4.7"
 jaxtyping = "^0.2.14"
 matplotlib = "^3.7.1"
+equinox = "^0.10.2"
+optax = "^0.1.4"
 
 [tool.poetry.group.dev.dependencies]
 jupyterlab = "^3.6.3"
 black = "^23.3.0"
-
-[tool.pyright]
-venvPath = ".venv"
+pytype = "^2023.4.11"
 
 [build-system]
 requires = ["poetry-core"]

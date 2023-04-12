@@ -7,13 +7,15 @@ import pennylane as qml
 from pennylane.operation import Operation
 from jaxtyping import Array, Float
 from typing import Sequence
+from abc import abstractmethod, ABCMeta
 
 
-class EntanglerLayer:
+class EntanglerLayer(metaclass=ABCMeta):
     """Base class for MPQC entangler layers (allows us to thread random keys
     through easily).
     """
 
+    @abstractmethod
     def __call__(self, _layer: int, _wires: Sequence[int]):
         """Apply the entangler layer (call in a QNode).
 
@@ -21,7 +23,7 @@ class EntanglerLayer:
           layer: The layer number (possibly used for deterministic PRNG use).
           wires: Sequence of wires to apply the layer to.
         """
-        pass
+        raise NotImplementedError
 
 
 class StaircaseEntangler(EntanglerLayer):

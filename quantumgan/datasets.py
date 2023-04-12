@@ -28,7 +28,7 @@ def generate_grayscale_bar(
     """
     key, k = jr.split(key)
     noise = jr.uniform(k, (n,), minval=0.4, maxval=0.6)
-    d = jnp.stack((noise, jnp.zeros(n), 1-noise, jnp.zeros(n)), axis=1)
+    d = jnp.stack((noise, jnp.zeros(n), 1 - noise, jnp.zeros(n)), axis=1)
     return key, d
 
 
@@ -53,7 +53,7 @@ def frechet_distance(S1: Float[Array, "n v"], S2: Float[Array, "m v"]):
     mu1, mu2 = jnp.mean(S1, axis=0), jnp.mean(S2, axis=0)
     sigma1, sigma2 = jnp.cov(S1, rowvar=False), jnp.cov(S2, rowvar=False)
 
-    M = sigma1 + sigma2 - 2*jax.scipy.linalg.sqrtm(sigma1 @ sigma2)
+    M = sigma1 + sigma2 - 2 * jax.scipy.linalg.sqrtm(sigma1 @ sigma2)
     dist = jnp.dot(mu1 - mu2, mu1 - mu2) + jnp.trace(M)
 
     return jnp.abs(dist)
