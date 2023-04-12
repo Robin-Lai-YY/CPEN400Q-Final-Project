@@ -8,9 +8,17 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 pennylane = "^0.29.1"
-jax = "^0.4.6"
-jaxlib = "^0.4.6"
+jax = "^0.4.8"
+jaxlib = "^0.4.7"
+jaxtyping = "^0.2.14"
+matplotlib = "^3.7.1"
 
+[tool.poetry.group.dev.dependencies]
+jupyterlab = "^3.6.3"
+black = "^23.3.0"
+
+[tool.pyright]
+venvPath = ".venv"
 
 [build-system]
 requires = ["poetry-core"]
