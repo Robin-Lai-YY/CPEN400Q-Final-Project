@@ -3,7 +3,6 @@
 import jax
 import jax.random as jr
 import jax.numpy as jnp
-import jax.random as jr
 from jaxtyping import Array, Float
 
 
@@ -34,16 +33,16 @@ def generate_grayscale_bar(
 
 def frechet_distance(S1: Float[Array, "n v"], S2: Float[Array, "m v"]):
     """Estimate the Fréchet distance (2-Wasserstein) between two
-    multidimensional Gaussian distributions (on R^v), given many (>1000) samples
-    from each.
+    multidimensional Gaussian distributions (on R^v), given many (>1000)
+    samples from each.
 
     Note that this only works if the distributions can be reasonably
-    approximated by a multidimensional gaussian.  We would otherwise need to use
-    an optimal transport solver.
+    approximated by a multidimensional gaussian.  We would otherwise need to
+    use an optimal transport solver.
 
     References:
-      [1] https://en.wikipedia.org/wiki/Fr%C3%A9chet_inception_distance#Definition
-      [2] https://en.wikipedia.org/wiki/Fr%C3%A9chet_distance#As_a_distance_between_probability_distributions_(the_FID_score)
+      [1] https://en.wikipedia.org/wiki/Fr%C3%A9chet_inception_distance
+      [2] https://en.wikipedia.org/wiki/Fr%C3%A9chet_distance
 
     Args:
       S1: Distribution 1 (n samples, v variables).

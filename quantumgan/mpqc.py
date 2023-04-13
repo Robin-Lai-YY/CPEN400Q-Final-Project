@@ -1,5 +1,5 @@
-"""Differentiable multi-layer parameterized quantum circuits for quantum machine
-learning.
+"""Differentiable multi-layer parameterized quantum circuits for quantum
+machine learning.
 """
 import jax.numpy as jnp
 import jax.random as jr
@@ -81,7 +81,9 @@ class MPQC:
         self.trainable = trainable
         self.entangler = entangler
 
-    def __call__(self, weights: Float[Array, "layer qubit"], wires: Sequence[int]):
+    def __call__(
+        self, weights: Float[Array, "layer qubit"], wires: Sequence[int]
+    ):
         """Apply the MPQC in a QNode.
 
         Args:
