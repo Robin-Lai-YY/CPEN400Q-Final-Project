@@ -61,7 +61,7 @@ class RandomEntangler(EntanglerLayer):
         k = jr.fold_in(self.key, layer)
         wires_permuted = jr.permutation(k, jnp.arange(len(wires)))
         for control, target in zip(wires_permuted, wires_permuted[1:]):
-            self.entangler((control, target))
+            self.entangler((wires[control], wires[target]))
 
 
 class MPQC:

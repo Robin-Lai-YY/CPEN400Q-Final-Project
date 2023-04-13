@@ -1,10 +1,10 @@
 """The 'batch' strategy from 'Experimental Quantum GANs'.
 """
+import jax
 import jax.numpy as jnp
 import jax.random as jr
 from jax.random import PRNGKeyArray
 from jaxtyping import Float, Array
-import equinox as eqx
 import pennylane as qml
 from pennylane.operation import Operation
 
@@ -25,6 +25,10 @@ class BatchGAN(GAN):
     dis_ancillary: tuple[str, ...]
     feature_reg: tuple[str, ...]
 
+    qnode_train_fake: qml.QNode
+    qnode_train_real: qml.QNode
+    mpqc: MPQC
+
     def __init__(
         self,
         features_dim: int,
@@ -44,7 +48,7 @@ class BatchGAN(GAN):
             time.
           gen_params: The initial parameters for the generator.
         """
-        super().__init__()
+        super().__init__(gen_params, dis_params)
         assert is_p2(features_dim), "Feature dimension must be a power of 2"
         assert is_p2(minibatch_size), "Minibatch size must be a power of 2"
 
@@ -61,7 +65,7 @@ class BatchGAN(GAN):
         gen_ancillary = gen_params.shape[1] - n_features
         dis_ancillary = dis_params.shape[1] - n_features
 
-        self.index_reg = format_wires("i", n_features)
+        self.index_reg = format_wires("i", int(jnp.log2(minibatch_size)))
         self.gen_ancillary = format_wires("ag", gen_ancillary)
         self.feature_reg = format_wires("f", int(jnp.log2(features_dim)))
         self.dis_ancillary = format_wires("ad", dis_ancillary)
@@ -74,22 +78,82 @@ class BatchGAN(GAN):
         )
 
         self.qdev = qml.device("default.qubit", wires=wires)
-        # self.qnode_train_fake = qml.QNode(
-        #     self.circuit_train_fake, self.qdev, interface="jax"
-        # )
-        # self.qnode_train_real = qml.QNode(
-        #     self.circuit_train_real, self.qdev, interface="jax"
-        # )
+        self.qnode_train_fake = qml.QNode(
+            self._circuit_train_fake, self.qdev, interface="jax"
+        )
+        self.qnode_train_real = qml.QNode(
+            self._circuit_train_real, self.qdev, interface="jax"
+        )
 
-    # See the docstrings for GAN for these override methods:
-    def random_latent(self, key: PRNGKeyArray) -> Float[Array, " latent"]:
-        raise NotImplementedError
+        self.mpqc = MPQC(trainable, entangler)
 
-    def train_fake(self, latent: Float[Array, " latent"]) -> float:
-        raise NotImplementedError
+    # See the docstrings for GAN for these overriden methods:
+    def random_latent(
+        self, key: PRNGKeyArray, batch: int
+    ) -> Float[Array, "batch latent"]:
+        size = (
+            len(self.gen_ancillary)
+            + len(self.feature_reg)
+            + len(self.index_reg)
+        )
+        return jr.uniform(key, (batch, size), minval=0, maxval=jnp.pi / 2)
 
-    def train_real(self, features: Float[Array, " feature"]) -> float:
-        raise NotImplementedError
+    def train_fake(
+        self, latent: Float[Array, "batch latent"]
+    ) -> Float[Array, " batch"]:
+        return jax.vmap(lambda x: self._measure(self.qnode_train_fake(x)))(
+            latent
+        )
+
+    def train_real(
+        self, features: Float[Array, "batch minibatch feature"]
+    ) -> Float[Array, " batch"]:
+        return jax.vmap(lambda x: self._measure(self.qnode_train_real(x)))(
+            features
+        )
+
+    def _measure(self, probs: Float[Array, " probs"]):
+        """Postselect for ancillary bits all being 0 and return a probability.
+
+        All the ancillary bits are first in the device setup, so we can throw
+        away all probs other than the first 2^n, where n is the number of
+        qubits NOT being postselected for.
+        """
+        n = 2 ** (len(self.index_reg) + len(self.feature_reg))
+        probs = probs[0:n]
+        # Add up all probabilities for the final bit of the discriminator
+        # output being 1.
+        return jnp.sum(probs[0::2]) / jnp.sum(probs)
+
+    def _circuit_train_fake(self, latent: Float[Array, " latent"]):
+        self._circuit_gen(latent)
+        self._circuit_dis()
+        return qml.probs()
+
+    def _circuit_train_real(
+        self, features: Float[Array, "minibatch feature"]
+    ):
+        embedding_wires = self.index_reg + self.feature_reg
+        features_normalized = features / jnp.sum(
+            features, axis=1, keepdims=True
+        )
+        # Because the index register comes first, this put the first training
+        # example into the amplitudes where i=0, the second where i=1, and so
+        # on.
+        features_flatten = features_normalized.reshape(
+            2 ** len(embedding_wires)
+        )
+        qml.AmplitudeEmbedding(jnp.sqrt(features_flatten), embedding_wires)
+        self._circuit_dis()
+        return qml.probs()
+
+    def _circuit_gen(self, latent: Float[Array, " latent"]):
+        wires = self.gen_ancillary + self.index_reg + self.feature_reg
+        qml.AngleEmbedding(latent, wires, rotation="Y")
+        self.mpqc(self.gen_params, self.gen_ancillary + self.feature_reg)
+
+    def _circuit_dis(self):
+        self.mpqc(self.dis_params, self.dis_ancillary + self.feature_reg)
 
     @staticmethod
     def init_params(
