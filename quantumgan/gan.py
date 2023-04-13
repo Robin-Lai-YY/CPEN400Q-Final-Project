@@ -63,7 +63,8 @@ class GAN(eqx.Module, metaclass=ABCMeta):
 
         Args:
           features: An array of feature vectors draw from the training set.
-            The minibatch dimension groups examples that are trained together.
+            The minibatch dimension groups examples that return a joint
+            probability.
 
         Returns:
           Probabilities from 0 to 1.

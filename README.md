@@ -19,6 +19,8 @@ this package.  A brief overview:
 - `batch`: The "batch GAN" strategy from "Experimental Quantum GANs".
 - `classical`: Classical GANs for the performance comparisons
 
+Public APIs have docstrings, while private methods start with `_` and do not.
+
 ### Development notes
 
 Before committing, remember to follow these steps:
