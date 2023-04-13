@@ -11,6 +11,7 @@ from pennylane.operation import Operation
 
 from quantumgan.gan import GAN
 from quantumgan.mpqc import MPQC, EntanglerLayer, StaircaseEntangler
+from quantumgan.devices import IdealDeviceJax
 
 
 class BatchGAN(GAN):
@@ -43,6 +44,8 @@ class BatchGAN(GAN):
         dis_params: Float[Array, "layers dis_qubits"],
         trainable: Operation = qml.RY,
         entangler: EntanglerLayer = StaircaseEntangler(),
+        device: qml.Device = IdealDeviceJax,
+        diff_method: str = "best",
     ):
         """Create and configure a batch GAN.
 
@@ -80,12 +83,14 @@ class BatchGAN(GAN):
             + self._feature_reg
         )
 
-        self._qdev = qml.device("default.qubit", wires=wires)
+        self._qdev = device(wires)
         self._qnode_train_fake = qml.QNode(
-            self._circuit_train_fake, self._qdev, interface="jax"
+            # could produce incorrect results sliently if `interface="jax"` is not included
+            self._circuit_train_fake, self._qdev, interface="jax", diff_method=diff_method
         )
         self._qnode_train_real = qml.QNode(
-            self._circuit_train_real, self._qdev, interface="jax"
+            # could produce incorrect results sliently if `interface="jax"` is not included
+            self._circuit_train_real, self._qdev, interface="jax", diff_method=diff_method
         )
 
         self._mpqc = MPQC(trainable, entangler)
@@ -131,13 +136,13 @@ class BatchGAN(GAN):
     def _circuit_train_fake(self, latent: Float[Array, " latent"]):
         self._circuit_gen(latent)
         self._circuit_dis()
-        return qml.probs()
+        return qml.probs(self.qdev.wires) # qml.probs() doesn't work with parameter-shift
 
     def _circuit_train_real(self, features: Float[Array, "minibatch feature"]):
         embedding_wires = self._index_reg + self._feature_reg
         features_normalized = features / jnp.sum(
             features, axis=1, keepdims=True
-        )
+        ) / features.shape[0]
         # Because the index register comes first, this put the first training
         # example into the amplitudes where i=0, the second where i=1, and so
         # on.
@@ -146,7 +151,7 @@ class BatchGAN(GAN):
         )
         qml.AmplitudeEmbedding(jnp.sqrt(features_flatten), embedding_wires)
         self._circuit_dis()
-        return qml.probs()
+        return qml.probs(self.qdev.wires) # qml.probs() doesn't work with parameter-shift
 
     def _circuit_gen(self, latent: Float[Array, " latent"]):
         wires = self._gen_ancillary + self._index_reg + self._feature_reg
