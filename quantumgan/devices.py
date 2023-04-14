@@ -1,13 +1,15 @@
-"""Devices used in the paper.
+"""Devices that are worth trying out.
 """
+import os
 import penneylane as qml
 import qiskit_aer.noise
 from qml.devices.default_qubit_jax import DefaultQubitJax
-from pennylane_qiskit import AerDevice
+from pennylane_qiskit import AerDevice, IBMQDevice
 
 
 class IdealDeviceJax(DefaultQubitJax):
     """An ideal quantum device for JAX."""
+
     def __init__(self, wires):
         """Create an ideal quantum device for JAX.
 
@@ -15,6 +17,20 @@ class IdealDeviceJax(DefaultQubitJax):
           wires: the wires in the device.
         """
         super(IdealDeviceJax, self).__init__(wires, shots=None)
+
+class IbmDevice(IBMQDevice):
+    """A device for the remote IBMQ API.
+    """
+
+    def __init__(self, wires, backend="ibmq_belem", ibmqx_token=None):
+        """Create an ideal quantum device for JAX.
+
+        Args:
+          wires: the wires in the device.
+          backend: name of the IBMQ compute resource
+          ibmqx_token: your account's IBMQ quantum API token
+        """
+        super(IbmDevice, self).__init__(wires, shots=3000, backend=backend, ibmqx_token=ibmqx_token)
 
 class NoisyDevice(AerDevice):
     """A noisy device simulating the superconducting quantum 
