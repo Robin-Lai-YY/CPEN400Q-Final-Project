@@ -26,14 +26,19 @@ class BatchGAN(GAN):
 
     _qdev: qml.Device = eqx.static_field(repr=False)
 
-    _index_reg: tuple[str, ...] = eqx.static_field(repr=False)
-    _gen_ancillary: tuple[str, ...] = eqx.static_field(repr=False)
-    _dis_ancillary: tuple[str, ...] = eqx.static_field(repr=False)
-    _feature_reg: tuple[str, ...] = eqx.static_field(repr=False)
+    _index_reg: tuple[str, ...] = eqx.static_field(repr=False, compare=False)
+    _gen_ancillary: tuple[str, ...] = eqx.static_field(
+        repr=False, compare=False
+    )
+    _dis_ancillary: tuple[str, ...] = eqx.static_field(
+        repr=False, compare=False
+    )
+    _feature_reg: tuple[str, ...] = eqx.static_field(repr=False, compare=False)
     _mpqc: MPQC = eqx.static_field(repr=False)
 
-    _qnode_train_fake: qml.QNode = eqx.static_field(repr=False)
-    _qnode_train_real: qml.QNode = eqx.static_field(repr=False)
+    _qnode_train_fake: qml.QNode = eqx.static_field(repr=False, compare=False)
+    _qnode_train_real: qml.QNode = eqx.static_field(repr=False, compare=False)
+    _qnode_generate: qml.QNode = eqx.static_field(repr=False, compare=False)
 
     def __init__(
         self,
@@ -87,6 +92,9 @@ class BatchGAN(GAN):
         self._qnode_train_real = qml.QNode(
             self._circuit_train_real, self._qdev, interface="jax"
         )
+        self._qnode_generate = qml.QNode(
+            self._circuit_generate, self._qdev, interface="jax"
+        )
 
         self._mpqc = MPQC(trainable, entangler)
 
@@ -103,17 +111,27 @@ class BatchGAN(GAN):
 
     def train_fake(
         self, latent: Float[Array, "batch latent"]
-    ) -> Float[Array, " batch"]:
-        return jax.vmap(lambda x: self._measure(self._qnode_train_fake(x)))(
-            latent
+    ) -> Float[Array, ""]:
+        # To support the GAN interface, we must accept a (batch, latent)-shape
+        # latent space array, but we only need one of the latent vectors.
+        return self._measure(
+            self._qnode_train_fake(self.gen_params, self.dis_params, latent[0])
         )
 
     def train_real(
-        self, features: Float[Array, "batch minibatch feature"]
-    ) -> Float[Array, " batch"]:
-        return jax.vmap(lambda x: self._measure(self._qnode_train_real(x)))(
-            features
-        )
+        self, features: Float[Array, "batch feature"]
+    ) -> Float[Array, ""]:
+        return self._measure(self._qnode_train_real(self.dis_params, features))
+
+    def generate(
+        self, latent: Float[Array, "batch latent"]
+    ) -> Float[Array, "batch feature"]:
+        n = 2 ** len(self._feature_reg)
+
+        def f(lvec):
+            return self._qnode_generate(self.gen_params, lvec)[:n]
+
+        return jax.vmap(f)(latent)
 
     def _measure(self, probs: Float[Array, " probs"]):
         """Postselect for ancillary bits all being 0 and return a probability.
@@ -128,12 +146,12 @@ class BatchGAN(GAN):
         # output being 1.
         return jnp.sum(probs[0::2]) / jnp.sum(probs)
 
-    def _circuit_train_fake(self, latent: Float[Array, " latent"]):
-        self._circuit_gen(latent)
-        self._circuit_dis()
+    def _circuit_train_fake(self, gen_params, dis_params, latent):
+        self._circuit_gen(gen_params, latent)
+        self._circuit_dis(dis_params)
         return qml.probs()
 
-    def _circuit_train_real(self, features: Float[Array, "minibatch feature"]):
+    def _circuit_train_real(self, dis_params, features):
         embedding_wires = self._index_reg + self._feature_reg
         features_normalized = features / jnp.sum(
             features, axis=1, keepdims=True
@@ -145,25 +163,29 @@ class BatchGAN(GAN):
             2 ** len(embedding_wires)
         )
         qml.AmplitudeEmbedding(jnp.sqrt(features_flatten), embedding_wires)
-        self._circuit_dis()
+        self._circuit_dis(dis_params)
         return qml.probs()
 
-    def _circuit_gen(self, latent: Float[Array, " latent"]):
+    def _circuit_generate(self, gen_params, latent):
+        self._circuit_gen(gen_params, latent)
+        return qml.probs()
+
+    def _circuit_gen(self, gen_params, latent):
         wires = self._gen_ancillary + self._index_reg + self._feature_reg
         qml.AngleEmbedding(latent, wires, rotation="Y")
-        self._mpqc(self.gen_params, self._gen_ancillary + self._feature_reg)
+        self._mpqc(gen_params, self._gen_ancillary + self._feature_reg)
 
-    def _circuit_dis(self):
-        self._mpqc(self.dis_params, self._dis_ancillary + self._feature_reg)
+    def _circuit_dis(self, dis_params):
+        self._mpqc(dis_params, self._dis_ancillary + self._feature_reg)
 
     @staticmethod
     def init_params(
         key: PRNGKeyArray,
         features_dim: int,
         gen_layers: int,
-        _gen_ancillary: int,
+        gen_ancillary: int,
         dis_layers: int,
-        _dis_ancillary: int,
+        dis_ancillary: int,
     ) -> tuple[
         Float[Array, "layers gen_qubits"], Float[Array, "layers dis_qubits"]
     ]:
@@ -175,9 +197,9 @@ class BatchGAN(GAN):
           features_dim: The total number of features (log2(n) feature register
             qubits).
           gen_layers: The number of quantum generator layers.
-          _gen_ancillary: The number of ancillary qubits for the generator.
+          gen_ancillary: The number of ancillary qubits for the generator.
           dis_layers: The number of quantum discriminator layers.
-          _dis_ancillary: The number of ancillary qubits for the discriminator.
+          dis_ancillary: The number of ancillary qubits for the discriminator.
 
         Returns:
           A tuple (gen_params, dis_params)
@@ -186,13 +208,13 @@ class BatchGAN(GAN):
         gen_key, dis_key = jr.split(key)
         gen_params = jr.uniform(
             gen_key,
-            (gen_layers, _gen_ancillary + feature_bits),
+            (gen_layers, gen_ancillary + feature_bits),
             minval=0,
             maxval=jnp.pi,
         )
         dis_params = jr.uniform(
             dis_key,
-            (dis_layers, _dis_ancillary + feature_bits),
+            (dis_layers, dis_ancillary + feature_bits),
             minval=0,
             maxval=jnp.pi,
         )

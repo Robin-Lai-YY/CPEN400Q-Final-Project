@@ -8,7 +8,7 @@ from jaxtyping import Array, Float
 
 def generate_grayscale_bar(
     key: jr.PRNGKeyArray, n: int
-) -> tuple[jr.PRNGKeyArray, Float[Array, "n 4"]]:
+) -> Float[Array, "n 4"]:
     """Sample the 2x2 grayscale bar distribution from the paper.
 
     By convention, we use row-major order for the pixels:
@@ -22,13 +22,11 @@ def generate_grayscale_bar(
       n: Number of samples to draw.
 
     Returns:
-      An updated PRNG key.
       The (n,4) array of samples.
     """
-    key, k = jr.split(key)
-    noise = jr.uniform(k, (n,), minval=0.4, maxval=0.6)
+    noise = jr.uniform(key, (n,), minval=0.4, maxval=0.6)
     d = jnp.stack((noise, jnp.zeros(n), 1 - noise, jnp.zeros(n)), axis=1)
-    return key, d
+    return d
 
 
 def frechet_distance(S1: Float[Array, "n v"], S2: Float[Array, "m v"]):

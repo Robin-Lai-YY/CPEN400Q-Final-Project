@@ -1,6 +1,8 @@
 """Interface to GANs, classical and quantum.
 """
+from __future__ import annotations
 from jax.random import PRNGKeyArray
+import jax.tree_util as tree_util
 from jaxtyping import Array, Float, PyTree
 import equinox as eqx
 from abc import abstractmethod, ABCMeta
@@ -40,7 +42,7 @@ class GAN(eqx.Module, metaclass=ABCMeta):
     @abstractmethod
     def train_fake(
         self, latent: Float[Array, "batch latent"]
-    ) -> Float[Array, " batch"]:
+    ) -> Float[Array, ""]:
         """Generate an image from the given latent space vector, feed it to the
         discriminator, and compute a probability that the discriminator thinks
         the data is real (0.0 -> fake, 1.0 -> real).
@@ -50,14 +52,14 @@ class GAN(eqx.Module, metaclass=ABCMeta):
             random_latent).
 
         Returns:
-          Probabilities from 0 to 1.
+          Probability from 0 to 1.
         """
         raise NotImplementedError
 
     @abstractmethod
     def train_real(
-        self, features: Float[Array, "batch minibatch feature"]
-    ) -> Float[Array, " batch"]:
+        self, features: Float[Array, "batch feature"]
+    ) -> Float[Array, ""]:
         """Compute a probability that the discriminator thinks a training
         example is real (0.0 -> fake, 1.0 -> real).
 
@@ -67,6 +69,36 @@ class GAN(eqx.Module, metaclass=ABCMeta):
             probability.
 
         Returns:
-          Probabilities from 0 to 1.
+          Probability from 0 to 1.
         """
         raise NotImplementedError
+
+    @abstractmethod
+    def generate(
+        self, latent: Float[Array, "batch latent"]
+    ) -> Float[Array, "batch feature"]:
+        """Use a trained network to generate examples.
+
+        Args:
+          latent: An array of latent space vectors.
+
+        Returns:
+          The generated examples.
+        """
+        raise NotImplementedError
+
+    def gen_filter(self) -> GAN:
+        """Create a pytree filter for the generator parameters.
+
+        Returns:
+          The filter.
+        """
+        return tree_util.tree_map_with_path(lambda p, x: p[0].key == 0, self)
+
+    def dis_filter(self) -> GAN:
+        """Create a pytree filter for the discriminator parameters.
+
+        Returns:
+          The filter.
+        """
+        return tree_util.tree_map_with_path(lambda p, x: p[0].key == 1, self)
