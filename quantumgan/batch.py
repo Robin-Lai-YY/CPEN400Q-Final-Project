@@ -90,12 +90,20 @@ class BatchGAN(GAN):
 
         self._qdev = device(wires)
         self._qnode_train_fake = qml.QNode(
-            # could produce incorrect results sliently if `interface="jax"` is not included
-            self._circuit_train_fake, self._qdev, interface="jax", diff_method=diff_method
+            # Could produce incorrect results sliently if `interface="jax"` is
+            # not included
+            self._circuit_train_fake,
+            self._qdev,
+            interface="jax",
+            diff_method=diff_method,
         )
         self._qnode_train_real = qml.QNode(
-            # could produce incorrect results sliently if `interface="jax"` is not included
-            self._circuit_train_real, self._qdev, interface="jax", diff_method=diff_method
+            # Could produce incorrect results sliently if `interface="jax"` is
+            # not included
+            self._circuit_train_real,
+            self._qdev,
+            interface="jax",
+            diff_method=diff_method,
         )
         self._qnode_generate = qml.QNode(
             self._circuit_generate, self._qdev, interface="jax"
@@ -158,9 +166,11 @@ class BatchGAN(GAN):
 
     def _circuit_train_real(self, dis_params, features):
         embedding_wires = self._index_reg + self._feature_reg
-        features_normalized = features / jnp.sum(
-            features, axis=1, keepdims=True
-        ) / features.shape[0]
+        features_normalized = (
+            features
+            / jnp.sum(features, axis=1, keepdims=True)
+            / features.shape[0]
+        )
         # Because the index register comes first, this put the first training
         # example into the amplitudes where i=0, the second where i=1, and so
         # on.

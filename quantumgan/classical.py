@@ -2,5 +2,6 @@
 comparison."""
 from quantumgan.gan import GAN
 
+
 class CNNGAN(GAN):
     pass
