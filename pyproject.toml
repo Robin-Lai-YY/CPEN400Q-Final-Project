@@ -8,6 +8,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.10,<3.11"
 pennylane = "^0.29.1"
+pennylane-qiskit = "^0.29.0"
 jax = "^0.4.8"
 jaxlib = "^0.4.7"
 jaxtyping = "^0.2.14"
