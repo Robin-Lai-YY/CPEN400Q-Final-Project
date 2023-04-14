@@ -141,7 +141,8 @@ class BatchGAN(GAN):
         n = 2 ** len(self._feature_reg)
 
         def f(lvec):
-            return self._qnode_generate(self.gen_params, lvec)[:n]
+            out = self._qnode_generate(self.gen_params, lvec)[:n]
+            return out / jnp.sum(out)
 
         return jax.vmap(f)(latent)
 

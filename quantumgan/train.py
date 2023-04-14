@@ -1,7 +1,6 @@
 """Generic training algorithms for GANs.  This is abstracted out here so allow
 for the same training routines to compare classical and quantum GANs.
 """
-import jax
 import jax.numpy as jnp
 import jax.random as jr
 from jaxtyping import Array, Float
@@ -88,14 +87,14 @@ def train_gan(
         l2 = loss_fn(gan.train_real(examples), 0.0)
         return (l1 + l2) / 2
 
-    @jax.jit
+    @eqx.filter_jit
     def step(gan, gen_s, dis_s, latent, examples):
         gen, dis = eqx.partition(gan, gan.gen_filter())
-        g_loss, g_grad = jax.value_and_grad(gen_loss)(gen, dis, latent)
+        g_loss, g_grad = eqx.filter_value_and_grad(gen_loss)(gen, dis, latent)
         g_updates, gen_s = gen_optimizer.update(g_grad, gen_s, gan)
 
         dis, gen = eqx.partition(gan, gan.dis_filter())
-        d_loss, d_grad = jax.value_and_grad(dis_loss)(
+        d_loss, d_grad = eqx.filter_value_and_grad(dis_loss)(
             dis, gen, latent, examples
         )
         d_updates, dis_s = dis_optimizer.update(d_grad, dis_s, gan)
