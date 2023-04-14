@@ -1,9 +1,9 @@
 """Devices that are worth trying out.
 """
 import os
-import penneylane as qml
+import pennylane as qml
 import qiskit_aer.noise
-from qml.devices.default_qubit_jax import DefaultQubitJax
+from pennylane.devices.default_qubit_jax import DefaultQubitJax
 from pennylane_qiskit import AerDevice, IBMQDevice
 
 

@@ -18,8 +18,8 @@ class BatchGAN(GAN):
     """Batch GANs: quantum generators AND discriminators.
 
     The batch strategy is useful when the entire feature vector fits onto our
-    quantum device.  We can use a minibatch_size > 1 with an index register to
-    train entire minibatches of examples at once.
+    quantum device.  We can use a batch_size > 1 with an index register to
+    train entire batches of examples at once.
     """
 
     gen_params: Float[Array, "layers gen_qubits"]
@@ -44,7 +44,7 @@ class BatchGAN(GAN):
     def __init__(
         self,
         features_dim: int,
-        minibatch_size: int,
+        batch_size: int,
         gen_params: Float[Array, "layers gen_qubits"],
         dis_params: Float[Array, "layers dis_qubits"],
         trainable: Operation = qml.RY,
@@ -57,14 +57,13 @@ class BatchGAN(GAN):
         Args:
           features_dim: Training examples and the generated data will be
             vectors of reals of this size.
-          minibatch_size: A setting > 1 introduces index register qubits,
-            allowing training to happen on more than one training example at a
-            time.
+          batch_size: A setting > 1 introduces index register qubits, allowing
+            training to happen on more than one training example at a time.
           gen_params: The initial parameters for the generator.
         """
         super().__init__(gen_params, dis_params)
         assert is_p2(features_dim), "Feature dimension must be a power of 2"
-        assert is_p2(minibatch_size), "Minibatch size must be a power of 2"
+        assert is_p2(batch_size), "Batch size must be a power of 2"
 
         self.gen_params = gen_params
         self.dis_params = dis_params
@@ -76,7 +75,7 @@ class BatchGAN(GAN):
         _gen_ancillary = gen_params.shape[1] - n_features
         _dis_ancillary = dis_params.shape[1] - n_features
 
-        self._index_reg = format_wires("i", int(jnp.log2(minibatch_size)))
+        self._index_reg = format_wires("i", int(jnp.log2(batch_size)))
         self._gen_ancillary = format_wires("ag", _gen_ancillary)
         self._feature_reg = format_wires("f", int(jnp.log2(features_dim)))
         self._dis_ancillary = format_wires("ad", _dis_ancillary)

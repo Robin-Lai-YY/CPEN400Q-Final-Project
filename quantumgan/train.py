@@ -43,8 +43,6 @@ class TrainResult:
 def train_gan(
     key: jr.PRNGKeyArray,
     gan: GAN,
-    init_gen_params,
-    init_dis_params,
     gen_optimizer: GradientTransformation,
     dis_optimizer: GradientTransformation,
     train_data: Float[Array, "n_batches batch feature"],
@@ -57,9 +55,7 @@ def train_gan(
     Completely generic routine for training generative adversarial networks.
 
     Args:
-      gan:
-      init_gen_params: Initial parameters for the generator optimizer.
-      init_dis_params: Initial parameters for the discriminator optimizer.
+      gan: The GAN (with initial parameters).
       gen_optimizer: An optax optimizer for the generator.
       dis_optimizer: An optax optimizer for the generator.
       train_data: An array of batches of features for real training examples.
@@ -79,8 +75,8 @@ def train_gan(
     g_loss_history = []
     d_loss_history = []
 
-    gen_s = gen_optimizer.init(init_gen_params)
-    dis_s = dis_optimizer.init(init_dis_params)
+    gen_s = gen_optimizer.init(gan.gen_params)
+    dis_s = dis_optimizer.init(gan.dis_params)
 
     def gen_loss(gen, dis, latent):
         gan = eqx.combine(gen, dis)
