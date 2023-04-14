@@ -3,6 +3,7 @@
 import jax
 import jax.random as jr
 import jax.numpy as jnp
+from jax.scipy.linalg import sqrtm
 from jaxtyping import Array, Float
 
 
@@ -50,7 +51,8 @@ def frechet_distance(S1: Float[Array, "n v"], S2: Float[Array, "m v"]):
     mu1, mu2 = jnp.mean(S1, axis=0), jnp.mean(S2, axis=0)
     sigma1, sigma2 = jnp.cov(S1, rowvar=False), jnp.cov(S2, rowvar=False)
 
-    M = sigma1 + sigma2 - 2 * jax.scipy.linalg.sqrtm(sigma1 @ sigma2)
+    sigma1_sqrt = sqrtm(sigma1)
+    M = sigma1 + sigma2 - 2 * sqrtm(sigma1_sqrt @ sigma2 @ sigma1_sqrt)
     dist = jnp.dot(mu1 - mu2, mu1 - mu2) + jnp.trace(M)
 
     return jnp.abs(dist)

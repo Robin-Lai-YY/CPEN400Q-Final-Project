@@ -108,7 +108,7 @@ def train_gan(
         progress = tqdm(train_data)
     train_iter = progress if show_progress else train_data
     for i, example in enumerate(train_iter):
-        if i % checkpoint_freq == 0:
+        if checkpoint_freq > 0 and i % checkpoint_freq == 0:
             checkpoints.append((i, gan))
 
         key, latent_key = jr.split(key)
@@ -117,12 +117,12 @@ def train_gan(
             gan, gen_s, dis_s, latent, example
         )
 
-        g_loss_history.append(g_loss)
-        d_loss_history.append(d_loss)
+        g_loss_history.append(g_loss.item())
+        d_loss_history.append(d_loss.item())
 
         if progress is not None and i % 100 == 0:
             progress.set_postfix({"g": f"{g_loss:.3f}", "d": f"{d_loss:.3f}"})
 
-    checkpoints.append((i, gan))
+    checkpoints.append((i+1, gan))
 
     return TrainResult(checkpoints, g_loss_history, d_loss_history)
