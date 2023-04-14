@@ -66,12 +66,12 @@ class NoisyDevice(AerDevice):
         # The paper does not provide the gate time, so we picked
         # one that is hopefully reasonable for a superconducting
         # quantum processor.
-        T_gate = 30 # in nanoseconds
+        T_single_gate = 130 # in nanoseconds
 
-        relaxation_error = noise.thermal_relaxation_error(T1_relaxation, T2_dephasing, T_gate)
+        relaxation_error = noise.thermal_relaxation_error(T1_relaxation, T2_dephasing, T_single_gate)
         readout_error = noise.ReadoutError([[f_00, 1-f_00], [1-f_11, f_11]])
 
-        m = noise.NoiseModel()
+        m = noise.NoiseModel(basis_gates=["ry", "cz"])
         m.add_all_qubit_quantum_error(relaxation_error, ["ry"])
         m.add_all_qubit_readout_error(readout_error)
         return m
