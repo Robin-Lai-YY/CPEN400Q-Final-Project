@@ -4,6 +4,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
 import jax.random as jr
+import pandas as pd
 import optax
 import multiprocessing
 from multiprocessing import Pool
@@ -29,7 +30,8 @@ def create_batch_gan(
     gen_ancillary,
     dis_layers,
     dis_ancillary,
-    device=IdealDeviceJax
+    device=IdealDeviceJax,
+    disable_jax_vmap=False,
 ):
     features_dim = 4
 
@@ -48,6 +50,7 @@ def create_batch_gan(
         init_gen_params,
         init_dis_params,
         device=device,
+        disable_jax_vmap=disable_jax_vmap,
     )
 
     return gan
@@ -93,8 +96,10 @@ def train_and_evaluate(config):
             gan = create_mlp_gan(params_key, **kwargs)
             jit = True
         case "batch_noisy":
-            gan = create_batch_gan(params_key, device=NoisyDevice, **kwargs)
-            jit = False # Avoid conversion between JAX arrays and python numpy arrays
+            gan = create_batch_gan(
+                params_key, device=NoisyDevice, disable_jax_vmap=True, **kwargs
+            )
+            jit = False  # Avoid conversion between JAX arrays and python numpy arrays
 
     gen_optimizer = optax.sgd(train_config["gen_lr"])
     dis_optimizer = optax.sgd(train_config["dis_lr"])
@@ -165,10 +170,11 @@ batchgan_noisy_conf1 = (
 )
 
 
-def configuration_space():
+def configuration_space(noise_graph):
     yield batchgan_conf1
     yield mlpgan_conf1
-    yield batchgan_noisy_conf1 # Slow
+    if noise_graph:
+        yield batchgan_noisy_conf1
 
 
 def plot_fd(ax, filt, color, mediancolor, width):
@@ -181,40 +187,72 @@ def plot_fd(ax, filt, color, mediancolor, width):
                     scores[i].append(fd)
     df = pd.DataFrame(scores)
     ax.set_ylim(1e-2, 2)
-    sns.boxplot(df, ax=ax, whis=0.5, color=color, width=width,
-                medianprops=dict(color=mediancolor), 
-                whiskerprops=dict(color=color), capprops=dict(color=color))
-
-
-def create_plots():
-    matplotlib.use("pgf")
-    plt.rcParams.update(
-        {
-            "text.usetex": True,
-            "font.family": "TeX Gyre Pagella",
-        }
+    sns.boxplot(
+        df,
+        ax=ax,
+        whis=0.5,
+        color=color,
+        width=width,
+        medianprops=dict(color=mediancolor),
+        whiskerprops=dict(color=color),
+        capprops=dict(color=color),
     )
 
-    fig, ax = plt.subplots(1, 2, sharey="row", figsize=(10, 4))
-    ax[0].set_title("Batch GAN FD score")
+
+def create_plots(noise_graph):
+    # matplotlib.use("pgf")
+    # plt.rcParams.update(
+    #     {
+    #         "text.usetex": True,
+    #         "font.family": "TeX Gyre Pagella",
+    #     }
+    # )
+
+    fig, ax = plt.subplots(1, 3, sharey="row", figsize=(10, 4))
+    ax[0].set_title("Batch GAN FD score (Ideal)")
     ax[0].set_xlabel("Training iteration")
     ax[0].set_ylabel("FD score")
     ax[0].set_yscale("log")
-    plot_fd(ax[0], lambda c: c == batchgan_conf1, color="darkgreen", width=0.2, mediancolor="lightskyblue")
-    ax[1].set_title("MLP GAN FD score")
+    plot_fd(
+        ax[0],
+        lambda c: c == batchgan_conf1,
+        color="darkgreen",
+        width=0.5,
+        mediancolor="lightskyblue",
+    )
+    ax[1].set_title("Batch GAN FD score (Noisy)")
     ax[1].set_xlabel("Training iteration")
     ax[1].set_ylabel("FD score")
     ax[1].set_yscale("log")
-    plot_fd(ax[1], lambda c: c == mlpgan_conf1, color="darkred", width=0.2, mediancolor="yellow")
+    if noise_graph:
+        plot_fd(
+            ax[1],
+            lambda c: c == batchgan_noisy_conf1,
+            color="yellowgreen",
+            width=0.5,
+            mediancolor="lightskyblue",
+        )
+    ax[2].set_title("MLP GAN FD score")
+    ax[2].set_xlabel("Training iteration")
+    ax[2].set_ylabel("FD score")
+    ax[2].set_yscale("log")
+    plot_fd(
+        ax[2],
+        lambda c: c == mlpgan_conf1,
+        color="darkred",
+        width=0.5,
+        mediancolor="yellow",
+    )
     fig.savefig("plots/fd_scores.pdf")
 
 
 if __name__ == "__main__":
+    noise_graph = True
     training_runs = 10
     jobs = []
 
     with shelve.open("results.db") as db:
-        for config in configuration_space():
+        for config in configuration_space(noise_graph):
             for seed in range(training_runs):
                 c = (seed,) + config
                 if dumps(c) not in db:
@@ -235,4 +273,4 @@ if __name__ == "__main__":
                     config, data = r
                     db[dumps(config)] = data
 
-    create_plots()
+    create_plots(noise_graph)
