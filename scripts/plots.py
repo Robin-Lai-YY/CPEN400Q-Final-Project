@@ -1,5 +1,6 @@
 """Script to (repeatably) generate the plots used in the report.
 """
+import matplotlib
 import matplotlib.pyplot as plt
 import jax.random as jr
 import optax
@@ -97,7 +98,7 @@ def train_and_evaluate(config):
         gen_optimizer,
         dis_optimizer,
         train_data,
-        checkpoint_freq=500,
+        checkpoint_freq=50,
     )
 
     return config, evaluate_gan(eval_key, train_result)
@@ -106,36 +107,37 @@ def train_and_evaluate(config):
 mlpgan_conf1 = (
     "mlp",
     {
-        "iters": 3500,
+        "iters": 350,
         "batch_size": 1,
         "gen_lr": 0.05,
         "dis_lr": 0.001,
     },
     {
-        "gen_hidden": 20,
+        "gen_hidden": 3,
         "dis_hidden": [20, 10],
+    },
+)
+
+batchgan_conf1 = (
+    "batch",
+    {
+        "iters": 350,
+        "batch_size": 1,
+        "gen_lr": 0.05,
+        "dis_lr": 0.001,
+    },
+    {
+        "batch_size": 1,
+        "gen_layers": 3,
+        "gen_ancillary": 1,
+        "dis_layers": 4,
+        "dis_ancillary": 1,
     },
 )
 
 
 def configuration_space():
-    for gen_layers, dis_layers in product(range(3, 6), range(3, 6)):
-        yield (
-            "batch",
-            {
-                "iters": 3500,
-                "batch_size": 1,
-                "gen_lr": 0.05,
-                "dis_lr": 0.001,
-            },
-            {
-                "batch_size": 1,
-                "gen_layers": gen_layers,
-                "gen_ancillary": 1,
-                "dis_layers": dis_layers,
-                "dis_ancillary": 1,
-            },
-        )
+    yield batchgan_conf1
     yield mlpgan_conf1
 
 
@@ -151,26 +153,16 @@ def plot_fd(ax, filt):
     ax.boxplot([scores[i] for i in iters], labels=iters)
 
 
-batchgan_conf1 = (
-    "batch",
-    {
-        "iters": 3500,
-        "batch_size": 1,
-        "gen_lr": 0.05,
-        "dis_lr": 0.001,
-    },
-    {
-        "batch_size": 1,
-        "gen_layers": 3,
-        "gen_ancillary": 1,
-        "dis_layers": 4,
-        "dis_ancillary": 1,
-    },
-)
-
-
 def create_plots():
-    fig, ax = plt.subplots(1, 2, figsize=(10, 4))
+    matplotlib.use("pgf")
+    plt.rcParams.update(
+        {
+            "text.usetex": True,
+            "font.family": "TeX Gyre Pagella",
+        }
+    )
+
+    fig, ax = plt.subplots(1, 2, sharey="row", figsize=(10, 4))
     ax[0].set_title("Batch GAN FD score")
     ax[0].set_xlabel("Training iteration")
     ax[0].set_ylabel("FD score")
@@ -184,8 +176,14 @@ def create_plots():
     fig.savefig("plots/fd_scores.pdf")
 
 
+def configuration_space():
+    # for gen_layers, dis_layers in product(range(3, 6), range(3, 6)):
+    yield batchgan_conf1
+    yield mlpgan_conf1
+
+
 if __name__ == "__main__":
-    training_runs = 100
+    training_runs = 10
     jobs = []
 
     with shelve.open("results.db") as db:
