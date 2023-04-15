@@ -48,6 +48,7 @@ def train_gan(
     loss_fn: LossFn = bce_loss,
     checkpoint_freq: int = 1000,
     show_progress: bool = False,
+    jit: bool = True,
 ) -> TrainResult:
     """Train a GAN.
 
@@ -87,7 +88,6 @@ def train_gan(
         l2 = loss_fn(gan.train_real(examples), 0.0)
         return (l1 + l2) / 2
 
-    @eqx.filter_jit
     def step(gan, gen_s, dis_s, latent, examples):
         gen, dis = eqx.partition(gan, gan.gen_filter())
         g_loss, g_grad = eqx.filter_value_and_grad(gen_loss)(gen, dis, latent)
@@ -102,6 +102,9 @@ def train_gan(
         gan = eqx.apply_updates(eqx.apply_updates(gan, g_updates), d_updates)
 
         return gan, gen_s, dis_s, g_loss, d_loss
+    
+    if jit:
+        step = eqx.filter_jit(step)
 
     progress = None
     if show_progress:
