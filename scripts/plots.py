@@ -18,6 +18,8 @@ from quantumgan.batch import BatchGAN
 from quantumgan.classical import BarMLPGAN
 from quantumgan.datasets import generate_grayscale_bar, frechet_distance
 from quantumgan.train import train_gan, TrainResult
+from quantumgan.ideal_device import IdealDeviceJax
+from quantumgan.devices import NoisyDevice
 
 
 def create_batch_gan(
@@ -27,6 +29,7 @@ def create_batch_gan(
     gen_ancillary,
     dis_layers,
     dis_ancillary,
+    device=IdealDeviceJax
 ):
     features_dim = 4
 
@@ -44,6 +47,7 @@ def create_batch_gan(
         batch_size,
         init_gen_params,
         init_dis_params,
+        device=device,
     )
 
     return gan
@@ -84,8 +88,13 @@ def train_and_evaluate(config):
     match ty:
         case "batch":
             gan = create_batch_gan(params_key, **kwargs)
+            jit = True
         case "mlp":
             gan = create_mlp_gan(params_key, **kwargs)
+            jit = True
+        case "batch_noisy":
+            gan = create_batch_gan(params_key, device=NoisyDevice, **kwargs)
+            jit = False # Avoid conversion between JAX arrays and python numpy arrays
 
     gen_optimizer = optax.sgd(train_config["gen_lr"])
     dis_optimizer = optax.sgd(train_config["dis_lr"])
@@ -100,6 +109,8 @@ def train_and_evaluate(config):
         dis_optimizer,
         train_data,
         checkpoint_freq=50,
+        show_progress=True,
+        jit=jit,
     )
 
     return config, evaluate_gan(eval_key, train_result)
@@ -136,10 +147,28 @@ batchgan_conf1 = (
     },
 )
 
+batchgan_noisy_conf1 = (
+    "batch_noisy",
+    {
+        "iters": 350,
+        "batch_size": 1,
+        "gen_lr": 0.05,
+        "dis_lr": 0.001,
+    },
+    {
+        "batch_size": 1,
+        "gen_layers": 3,
+        "gen_ancillary": 1,
+        "dis_layers": 4,
+        "dis_ancillary": 1,
+    },
+)
+
 
 def configuration_space():
     yield batchgan_conf1
     yield mlpgan_conf1
+    yield batchgan_noisy_conf1 # Slow
 
 
 def plot_fd(ax, filt, color, mediancolor, width):
@@ -150,10 +179,9 @@ def plot_fd(ax, filt, color, mediancolor, width):
             if filt((ty, train_conf, gan_conf)):
                 for i, fd in db[key]:
                     scores[i].append(fd)
-    x = list(scores.keys())
-    y = [scores[i] for i in x]
+    df = pd.DataFrame(scores)
     ax.set_ylim(1e-2, 2)
-    sns.boxplot(ax=ax, y=y, x=x, whis=0.5, color=color, width=width, showfliers=False,
+    sns.boxplot(df, ax=ax, whis=0.5, color=color, width=width,
                 medianprops=dict(color=mediancolor), 
                 whiskerprops=dict(color=color), capprops=dict(color=color))
 
@@ -179,12 +207,6 @@ def create_plots():
     ax[1].set_yscale("log")
     plot_fd(ax[1], lambda c: c == mlpgan_conf1, color="darkred", width=0.2, mediancolor="yellow")
     fig.savefig("plots/fd_scores.pdf")
-
-
-def configuration_space():
-    # for gen_layers, dis_layers in product(range(3, 6), range(3, 6)):
-    yield batchgan_conf1
-    yield mlpgan_conf1
 
 
 if __name__ == "__main__":
