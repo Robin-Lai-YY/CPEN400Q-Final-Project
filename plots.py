@@ -9,6 +9,7 @@ from tqdm.auto import tqdm
 import shelve
 from json import dumps, loads
 from itertools import product
+from collections import defaultdict
 
 from quantumgan.gan import GAN
 from quantumgan.batch import BatchGAN
@@ -102,6 +103,21 @@ def train_and_evaluate(config):
     return config, evaluate_gan(eval_key, train_result)
 
 
+mlpgan_conf1 = (
+    "mlp",
+    {
+        "iters": 3500,
+        "batch_size": 1,
+        "gen_lr": 0.05,
+        "dis_lr": 0.001,
+    },
+    {
+        "gen_hidden": 20,
+        "dis_hidden": [20, 10],
+    },
+)
+
+
 def configuration_space():
     for gen_layers, dis_layers in product(range(3, 6), range(3, 6)):
         yield (
@@ -120,23 +136,56 @@ def configuration_space():
                 "dis_ancillary": 1,
             },
         )
-    yield (
-        "mlp",
-        {
-            "iters": 3500,
-            "batch_size": 1,
-            "gen_lr": 0.05,
-            "dis_lr": 0.001,
-        },
-        {
-            "gen_hidden": 5,
-            "dis_hidden": (5, 2),
-        },
-    )
+    yield mlpgan_conf1
+
+
+def plot_fd(ax, filt):
+    scores = defaultdict(list)
+    with shelve.open("results.db") as db:
+        for key in db:
+            seed, ty, train_conf, gan_conf = loads(key)
+            if filt((ty, train_conf, gan_conf)):
+                for i, fd in db[key]:
+                    scores[i].append(fd)
+    iters = list(scores.keys())
+    ax.boxplot([scores[i] for i in iters], labels=iters)
+
+
+batchgan_conf1 = (
+    "batch",
+    {
+        "iters": 3500,
+        "batch_size": 1,
+        "gen_lr": 0.05,
+        "dis_lr": 0.001,
+    },
+    {
+        "batch_size": 1,
+        "gen_layers": 3,
+        "gen_ancillary": 1,
+        "dis_layers": 4,
+        "dis_ancillary": 1,
+    },
+)
+
+
+def create_plots():
+    fig, ax = plt.subplots(1, 2, figsize=(10, 4))
+    ax[0].set_title("Batch GAN FD score")
+    ax[0].set_xlabel("Training iteration")
+    ax[0].set_ylabel("FD score")
+    ax[0].set_yscale("log")
+    plot_fd(ax[0], lambda c: c == batchgan_conf1)
+    ax[1].set_title("MLP GAN FD score")
+    ax[1].set_xlabel("Training iteration")
+    ax[1].set_ylabel("FD score")
+    ax[1].set_yscale("log")
+    plot_fd(ax[1], lambda c: c == mlpgan_conf1)
+    fig.savefig("plots/fd_scores.pdf")
 
 
 if __name__ == "__main__":
-    training_runs = 20
+    training_runs = 100
     jobs = []
 
     with shelve.open("results.db") as db:
@@ -160,3 +209,5 @@ if __name__ == "__main__":
                         continue
                     config, data = r
                     db[dumps(config)] = data
+
+    create_plots()
