@@ -19,12 +19,12 @@ LossFn = Callable[[Float[Array, " batch"], float], float]
 def bce_loss(x: Float[Array, " batch"], target: float) -> Float[Array, ""]:
     """Compute the binary cross entropy between x and the target probabilities.
 
-       Args:
-         x: Array of input probabilities (entire batch)
-         target: Target probability (label)
+    Args:
+      x: Array of input probabilities (entire batch)
+      target: Target probability (label)
 
-       Returns:
-         cross entropy loss (float).
+    Returns:
+      cross entropy loss (float).
     """
     return -jnp.mean(
         target * jnp.clip(jnp.log(x), a_min=-100)
@@ -64,6 +64,9 @@ def train_gan(
         GAN).
       loss_fn: Loss function (binary cross entropy by default).  The loss gets
         an array of GAN outputs and a label (0.0 = fake, 1.0 = real).
+      checkpoint_freq: Number of iterations between saving a copy of the GAN.
+      show_progress: Option to show the process in a tqdm progress bar.
+      jit: Option to enable JIT.
 
     Returns:
       checkpoints: A series of trained GANs.  The last entry is the final,

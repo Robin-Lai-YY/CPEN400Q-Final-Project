@@ -63,6 +63,12 @@ class BatchGAN(GAN):
           batch_size: A setting > 1 introduces index register qubits, allowing
             training to happen on more than one training example at a time.
           gen_params: The initial parameters for the generator.
+          dis_params: The initial parameters for the discriminator
+          trainable: The trainable unitary
+          entangler: The entagler layer
+          device: The device to run the circuits
+          diff_method: The method of differentiation of QNodes
+          disable_jax_vmap: Whether to avoid using jax.vmp, which sometimes has compatibility issues with Qiskit
         """
         super().__init__(gen_params, dis_params)
         assert is_p2(features_dim), "Feature dimension must be a power of 2"
