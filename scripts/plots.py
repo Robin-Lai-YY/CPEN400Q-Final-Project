@@ -2,6 +2,7 @@
 """
 import matplotlib
 import matplotlib.pyplot as plt
+import seaborn as sns
 import jax.random as jr
 import optax
 import multiprocessing
@@ -141,7 +142,7 @@ def configuration_space():
     yield mlpgan_conf1
 
 
-def plot_fd(ax, filt):
+def plot_fd(ax, filt, color, mediancolor, width):
     scores = defaultdict(list)
     with shelve.open("results.db") as db:
         for key in db:
@@ -149,8 +150,12 @@ def plot_fd(ax, filt):
             if filt((ty, train_conf, gan_conf)):
                 for i, fd in db[key]:
                     scores[i].append(fd)
-    iters = list(scores.keys())
-    ax.boxplot([scores[i] for i in iters], labels=iters)
+    x = list(scores.keys())
+    y = [scores[i] for i in x]
+    ax.set_ylim(1e-2, 2)
+    sns.boxplot(ax=ax, y=y, x=x, whis=0.5, color=color, width=width, showfliers=False,
+                medianprops=dict(color=mediancolor), 
+                whiskerprops=dict(color=color), capprops=dict(color=color))
 
 
 def create_plots():
@@ -167,12 +172,12 @@ def create_plots():
     ax[0].set_xlabel("Training iteration")
     ax[0].set_ylabel("FD score")
     ax[0].set_yscale("log")
-    plot_fd(ax[0], lambda c: c == batchgan_conf1)
+    plot_fd(ax[0], lambda c: c == batchgan_conf1, color="darkgreen", width=0.2, mediancolor="lightskyblue")
     ax[1].set_title("MLP GAN FD score")
     ax[1].set_xlabel("Training iteration")
     ax[1].set_ylabel("FD score")
     ax[1].set_yscale("log")
-    plot_fd(ax[1], lambda c: c == mlpgan_conf1)
+    plot_fd(ax[1], lambda c: c == mlpgan_conf1, color="darkred", width=0.2, mediancolor="yellow")
     fig.savefig("plots/fd_scores.pdf")
 
 
