@@ -211,7 +211,7 @@ def create_plots(noise_graph, latex_backend):
         )
 
     fig, ax = plt.subplots(1, 3, sharey="row", figsize=(10, 4))
-    ax[0].set_title("Batch GAN FD score (Ideal)")
+    ax[0].set_title("Batch GAN (Ideal) FD score")
     ax[0].set_xlabel("Training iteration")
     ax[0].set_ylabel("FD score")
     ax[0].set_yscale("log")
@@ -222,9 +222,8 @@ def create_plots(noise_graph, latex_backend):
         width=0.5,
         mediancolor="lightskyblue",
     )
-    ax[1].set_title("Batch GAN FD score (Noisy)")
+    ax[1].set_title("Batch GAN (Noisy) FD score")
     ax[1].set_xlabel("Training iteration")
-    ax[1].set_ylabel("FD score")
     ax[1].set_yscale("log")
     if noise_graph:
         plot_fd(
@@ -236,7 +235,6 @@ def create_plots(noise_graph, latex_backend):
         )
     ax[2].set_title("MLP GAN FD score")
     ax[2].set_xlabel("Training iteration")
-    ax[2].set_ylabel("FD score")
     ax[2].set_yscale("log")
     plot_fd(
         ax[2],
@@ -269,12 +267,11 @@ def parse():
 
 if __name__ == "__main__":
     args = parse()
-    noise_graph = args.noise
     training_runs = 10
     jobs = []
 
     with shelve.open("results.db") as db:
-        for config in configuration_space(noise_graph):
+        for config in configuration_space(args.noise):
             for seed in range(training_runs):
                 c = (seed,) + config
                 if dumps(c) not in db:
@@ -295,4 +292,4 @@ if __name__ == "__main__":
                     config, data = r
                     db[dumps(config)] = data
 
-    create_plots(noise_graph)
+    create_plots(args.noise, args.latex)
