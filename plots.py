@@ -3,31 +3,37 @@
 import matplotlib.pyplot as plt
 import jax.random as jr
 import optax
-from multiprocessing import Pool, cpu_count
+import multiprocessing
+from multiprocessing import Pool
 from tqdm.auto import tqdm
 import shelve
+from json import dumps, loads
+from itertools import product
 
 from quantumgan.gan import GAN
 from quantumgan.batch import BatchGAN
+from quantumgan.classical import BarMLPGAN
 from quantumgan.datasets import generate_grayscale_bar, frechet_distance
 from quantumgan.train import train_gan, TrainResult
 
 
-def train_batch_gan(
-    key: jr.PRNGKeyArray,
+def create_batch_gan(
+    params_key: jr.PRNGKeyArray,
+    batch_size,
+    gen_layers,
+    gen_ancillary,
+    dis_layers,
+    dis_ancillary,
 ):
-    key, params_key = jr.split(key)
     features_dim = 4
-    batch_size = 1
-    train_iters = 350
 
     init_gen_params, init_dis_params = BatchGAN.init_params(
         params_key,
         features_dim,
-        gen_layers=3,
-        gen_ancillary=1,
-        dis_layers=4,
-        dis_ancillary=1,
+        gen_layers=gen_layers,
+        gen_ancillary=gen_ancillary,
+        dis_layers=dis_layers,
+        dis_ancillary=dis_ancillary,
     )
 
     gan = BatchGAN(
@@ -37,21 +43,17 @@ def train_batch_gan(
         init_dis_params,
     )
 
-    gen_optimizer = optax.sgd(0.05)
-    dis_optimizer = optax.sgd(0.001)
+    return gan
 
-    key, data_key = jr.split(key)
-    train_data = generate_grayscale_bar(data_key, train_iters)
-    train_data = train_data.reshape(-1, batch_size, features_dim)
 
-    return train_gan(
-        key,
-        gan,
-        gen_optimizer,
-        dis_optimizer,
-        train_data,
-        checkpoint_freq=50,
-    )
+def create_mlp_gan(
+    params_key: jr.PRNGKeyArray,
+    gen_hidden,
+    dis_hidden,
+):
+    gan = BarMLPGAN(params_key, gen_hidden, dis_hidden)
+    return gan
+
 
 def evaluate_gan(key: jr.PRNGKeyArray, train_result: TrainResult):
     eval_samples = 1000
@@ -68,19 +70,93 @@ def evaluate_gan(key: jr.PRNGKeyArray, train_result: TrainResult):
 
     return scores
 
-key = jr.PRNGKey(0)
-def train_and_evaluate(i: int):
-    train_key, eval_key = jr.split(jr.fold_in(key, i), 2)
-    train_result = train_batch_gan(train_key)
-    return key, evaluate_gan(eval_key, train_result)
 
-scores = []
-total = 100
+def train_and_evaluate(config):
+    key = jr.PRNGKey(0)
+    seed, ty, train_config, kwargs = config
+    params_key, data_key, train_key, eval_key = jr.split(
+        jr.fold_in(key, seed), 4
+    )
 
-with shelve.open('results') as db:
-    with Pool(processes=1) as pool:
-        for i in range(total):
-            scores = tqdm(pool.imap_unordered(train_and_evaluate, range(total)), total=total)
+    match ty:
+        case "batch":
+            gan = create_batch_gan(params_key, **kwargs)
+        case "mlp":
+            gan = create_mlp_gan(params_key, **kwargs)
 
-            for j, score in scores:
-                db[j] == score
+    gen_optimizer = optax.sgd(train_config["gen_lr"])
+    dis_optimizer = optax.sgd(train_config["dis_lr"])
+
+    train_data = generate_grayscale_bar(
+        data_key, train_config["iters"]
+    ).reshape(-1, train_config["batch_size"], 4)
+    train_result = train_gan(
+        train_key,
+        gan,
+        gen_optimizer,
+        dis_optimizer,
+        train_data,
+        checkpoint_freq=500,
+    )
+
+    return config, evaluate_gan(eval_key, train_result)
+
+
+def configuration_space():
+    for gen_layers, dis_layers in product(range(3, 6), range(3, 6)):
+        yield (
+            "batch",
+            {
+                "iters": 3500,
+                "batch_size": 1,
+                "gen_lr": 0.05,
+                "dis_lr": 0.001,
+            },
+            {
+                "batch_size": 1,
+                "gen_layers": gen_layers,
+                "gen_ancillary": 1,
+                "dis_layers": dis_layers,
+                "dis_ancillary": 1,
+            },
+        )
+    yield (
+        "mlp",
+        {
+            "iters": 3500,
+            "batch_size": 1,
+            "gen_lr": 0.05,
+            "dis_lr": 0.001,
+        },
+        {
+            "gen_hidden": 5,
+            "dis_hidden": (5, 2),
+        },
+    )
+
+
+if __name__ == "__main__":
+    training_runs = 20
+    jobs = []
+
+    with shelve.open("results.db") as db:
+        for config in configuration_space():
+            for seed in range(training_runs):
+                c = (seed,) + config
+                if dumps(c) not in db:
+                    jobs.append(c)
+
+    if len(jobs) > 0:
+        multiprocessing.set_start_method("spawn")
+        with Pool(processes=multiprocessing.cpu_count()) as pool:
+            results = tqdm(
+                pool.imap_unordered(train_and_evaluate, jobs, chunksize=1),
+                total=len(jobs),
+            )
+
+            with shelve.open("results.db") as db:
+                for r in results:
+                    if r is None:
+                        continue
+                    config, data = r
+                    db[dumps(config)] = data
