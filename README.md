@@ -29,9 +29,8 @@ If you have a lot of CPU cores and time, you can also generate the bar plots:
 $ poetry run python scripts/plots.py  # Reproduce the report bar plots
 ```
 
-If you python environment looks like ![XKCD
-1987](https://imgs.xkcd.com/comics/python_environment.png), a container image
-can be built:
+If you python environment looks like [this](https://xkcd.com/1987/), a container
+image can be built:
 
 ```
 $ docker build -t quantumgan . && docker run -it --rm -p 8888:8888 quantumgan poetry run jupyter lab --allow-root --ip 0.0.0.0 --no-browser
