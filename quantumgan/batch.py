@@ -41,6 +41,8 @@ class BatchGAN(GAN):
     _qnode_train_real: qml.QNode = eqx.static_field(repr=False, compare=False)
     _qnode_generate: qml.QNode = eqx.static_field(repr=False, compare=False)
 
+    _disable_jax_vmap: bool = eqx.static_field(repr=False, compare=False)
+
     def __init__(
         self,
         features_dim: int,
@@ -51,6 +53,7 @@ class BatchGAN(GAN):
         entangler: EntanglerLayer = StaircaseEntangler(),
         device: qml.Device = IdealDeviceJax,
         diff_method: str = "best",
+        disable_jax_vmap: bool = False,
     ):
         """Create and configure a batch GAN.
 
@@ -110,6 +113,8 @@ class BatchGAN(GAN):
 
         self._mpqc = MPQC(trainable, entangler)
 
+        self._disable_jax_vmap = disable_jax_vmap
+
     # See the docstrings for GAN for these overriden methods:
     def random_latent(
         self, key: PRNGKeyArray, batch: int
@@ -144,7 +149,10 @@ class BatchGAN(GAN):
             out = self._qnode_generate(self.gen_params, lvec)[:n]
             return out / jnp.sum(out)
 
-        return jax.vmap(f)(latent)
+        if not self._disable_jax_vmap:
+            return jax.vmap(f)(latent)
+        else:
+            return jnp.array([f(lvec) for lvec in latent])
 
     def _measure(self, probs: Float[Array, " probs"]):
         """Postselect for ancillary bits all being 0 and return a probability.
