@@ -1,6 +1,5 @@
 """Utilities for generating data from known distributions.
 """
-import jax
 import jax.random as jr
 import jax.numpy as jnp
 from jax.scipy.linalg import sqrtm

@@ -24,7 +24,7 @@ def bce_loss(x: Float[Array, " batch"], target: float) -> Float[Array, ""]:
          target: Target probability (label)
 
        Returns:
-    cross entropy loss (float).
+         cross entropy loss (float).
     """
     return -jnp.mean(
         target * jnp.clip(jnp.log(x), a_min=-100)
@@ -102,7 +102,7 @@ def train_gan(
         gan = eqx.apply_updates(eqx.apply_updates(gan, g_updates), d_updates)
 
         return gan, gen_s, dis_s, g_loss, d_loss
-    
+
     if jit:
         step = eqx.filter_jit(step)
 

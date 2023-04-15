@@ -1,6 +1,7 @@
 """Script to (repeatably) generate the plots used in the report.
 """
-import matplotlib
+import argparse
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import seaborn as sns
 import jax.random as jr
@@ -199,14 +200,15 @@ def plot_fd(ax, filt, color, mediancolor, width):
     )
 
 
-def create_plots(noise_graph):
-    # matplotlib.use("pgf")
-    # plt.rcParams.update(
-    #     {
-    #         "text.usetex": True,
-    #         "font.family": "TeX Gyre Pagella",
-    #     }
-    # )
+def create_plots(noise_graph, latex_backend):
+    if latex_backend:
+        mpl.use("pgf")
+        plt.rcParams.update(
+            {
+                "text.usetex": True,
+                "font.family": "TeX Gyre Pagella",
+            }
+        )
 
     fig, ax = plt.subplots(1, 3, sharey="row", figsize=(10, 4))
     ax[0].set_title("Batch GAN FD score (Ideal)")
@@ -246,8 +248,28 @@ def create_plots(noise_graph):
     fig.savefig("plots/fd_scores.pdf")
 
 
+def parse():
+    parser = argparse.ArgumentParser(
+        description="Script for generating the box plots"
+    )
+    parser.add_argument(
+        "--noise",
+        required=True,
+        type=bool,
+        help="include plots for the noisy device",
+    )
+    parser.add_argument(
+        "--latex",
+        default=False,
+        type=bool,
+        help="use LaTeX backend for generating plots",
+    )
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    noise_graph = True
+    args = parse()
+    noise_graph = args.noise
     training_runs = 10
     jobs = []
 
