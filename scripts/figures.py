@@ -8,6 +8,7 @@ from quantumgan.train import train_gan
 import quantumgan.datasets as datasets
 from quantumgan.datasets import generate_grayscale_bar
 from quantumgan.batch import BatchGAN
+from quantumgan.mpqc import RandomEntangler
 
 matplotlib.use("pgf")
 plt.rcParams.update(
@@ -76,6 +77,7 @@ def train_example(key):
         show_progress=True,
     )
 
+
 train_result1 = train_example(jr.PRNGKey(1))
 
 latent = gan.random_latent(jr.PRNGKey(0), 8)
@@ -94,10 +96,42 @@ fig, ax = plt.subplots(1, 2, sharey="row", figsize=(8, 4))
 ax[0].set_title("Loss with initial parameters set 1")
 ax[0].set_xlabel("Iteration")
 ax[0].set_ylabel("Loss")
-ax[0].plot(range(2000), train_result1.g_loss_history, train_result1.d_loss_history)
+ax[0].plot(
+    range(2000), train_result1.g_loss_history, train_result1.d_loss_history
+)
 ax[1].set_title("Loss with initial parameters set 2")
 ax[1].set_xlabel("Iteration")
 ax[1].set_ylabel("Loss")
-ax[1].plot(range(2000), train_result2.g_loss_history, train_result2.d_loss_history)
-ax[1].legend(['Generator', 'Discriminator'])
+ax[1].plot(
+    range(2000), train_result2.g_loss_history, train_result2.d_loss_history
+)
+ax[1].legend(["Generator", "Discriminator"])
 fig.savefig("report/plots/loss_compare.pdf")
+
+
+key = jr.PRNGKey(0)
+key, params_key = jr.split(key)
+
+features_dim = 4
+batch_size = 2
+gen_params, dis_params = BatchGAN.init_params(
+    params_key,
+    features_dim,
+    gen_layers=3,
+    gen_ancillary=1,
+    dis_layers=3,
+    dis_ancillary=1,
+)
+gan = BatchGAN(
+    features_dim,
+    batch_size,
+    gen_params,
+    dis_params,
+    trainable=qml.RZ,
+    entangler=RandomEntangler(key, entangler=qml.CNOT),
+)
+
+qml.draw_mpl(gan._qnode_train_fake)(
+    gan.gen_params, gan.dis_params, gan.random_latent(key, 1)[0]
+)
+plt.savefig("report/plots/index_cnot_circuit.pdf")
