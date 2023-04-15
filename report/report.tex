@@ -1,12 +1,16 @@
-\documentclass{article}
+\documentclass[12pt]{article}
 
 \usepackage{fontspec}
 \usepackage[margin=1in]{geometry}
 \usepackage{amsmath}
 \usepackage{hyperref}
 \usepackage[backend=biber]{biblatex}
+\usepackage{pgf}
 \usepackage{tikz}
 \usepackage{expl3}
+\usepackage{bm}
+\usepackage{float}
+\usepackage{amsfonts}
 % \usepackage{euler-math}
 
 \usetikzlibrary{quantikz}
@@ -20,7 +24,7 @@
 
 \title{CPEN 400Q project report\\
   Experimental Quantum GANs}
-\author{}
+\author{Yuyou Lai, Juntong Luo, Sam Schweigel, Bolong Tan}
 \date{}
 
 \begin{document}
@@ -29,17 +33,13 @@
 
 \tableofcontents
 
-\section{Introduction}
+% \input{report-requirements.tex}
+\input{report/introduction.tex}
+\input{report/theory.tex}
+\input{report/results.tex}
+\input{report/reproducibility.tex}
+\input{report/framework.tex}
 
-\begin{quantikz}[slice all,remove end slices=1,slice
-    titles=slice \col,slice style=blue,slice label style
-    ={inner sep=1pt,anchor=south west,rotate=40}]
-  & \gate{H} & \ctrl{1} & \meter{} && \\
-  & \qw & \targ{} & \ctrl{1} & \gate{H} & \qw \\
-  & \qw & \qw & \targ{} & \qw & \qw
-\end{quantikz}
-
-Example citation\autocite{huang2021}.
 
 \printbibliography
 
