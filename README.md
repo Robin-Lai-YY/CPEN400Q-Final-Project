@@ -6,10 +6,6 @@ This repository contains software for reproducing some of the result from
 [Experimental Quantum Generative Adversarial Networks for Image Generation
 ](https://arxiv.org/abs/2010.06201) by He-Liang Huang et. al.
 
-```python
-
-```
-
 Links:
 - [Companion report](report/report.pdf)
 - [Presentation](report/presentation.pdf)
