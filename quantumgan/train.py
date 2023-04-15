@@ -123,6 +123,6 @@ def train_gan(
         if progress is not None and i % 100 == 0:
             progress.set_postfix({"g": f"{g_loss:.3f}", "d": f"{d_loss:.3f}"})
 
-    checkpoints.append((i+1, gan))
+    checkpoints.append((i + 1, gan))
 
     return TrainResult(checkpoints, g_loss_history, d_loss_history)

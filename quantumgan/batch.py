@@ -11,7 +11,7 @@ from pennylane.operation import Operation
 
 from quantumgan.gan import GAN
 from quantumgan.mpqc import MPQC, EntanglerLayer, StaircaseEntangler
-from quantumgan.devices import IdealDeviceJax
+from quantumgan.ideal_device import IdealDeviceJax
 
 
 class BatchGAN(GAN):

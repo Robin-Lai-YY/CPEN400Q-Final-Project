@@ -74,7 +74,8 @@ class BarMLPGAN(GAN):
     def generate(
         self, latent: Float[Array, "batch latent"]
     ) -> Float[Array, "batch feature"]:
-        x = latent[0]
-        for layer in self.gen_params:
-            x = layer(x)
-        return x
+        def f(x):
+            for layer in self.gen_params:
+                x = layer(x)
+            return x
+        return jax.vmap(f)(latent)
