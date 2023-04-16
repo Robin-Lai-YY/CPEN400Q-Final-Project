@@ -260,4 +260,4 @@ class BatchGAN(GAN):
 
 def is_p2(x: int) -> bool:
     """Returns true if the argument is a power of 2."""
-    return jnp.log2(x) == int(jnp.log2(x))
+    return jnp.isclose(jnp.log2(x), 2 ** jnp.log2(x))
