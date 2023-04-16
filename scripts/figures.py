@@ -10,13 +10,13 @@ from quantumgan.datasets import generate_grayscale_bar
 from quantumgan.batch import BatchGAN
 from quantumgan.mpqc import RandomEntangler
 
-matplotlib.use("pgf")
-plt.rcParams.update(
-    {
-        "text.usetex": True,
-        "font.family": "TeX Gyre Pagella",
-    }
-)
+# matplotlib.use("pgf")
+# plt.rcParams.update(
+#     {
+#         "text.usetex": True,
+#         "font.family": "TeX Gyre Pagella",
+#     }
+# )
 
 key = jr.PRNGKey(0)
 data = generate_grayscale_bar(key, 8).reshape(4, 2, 2, 2)
