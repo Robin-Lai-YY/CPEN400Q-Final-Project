@@ -65,9 +65,11 @@ Before committing, remember to follow these steps:
 - `poetry run pytype quantumgan/`: run the static type checker.
 
 # Software Limitations
-We found that `jax.vmap` is incompatible with the noise model in Qiskit Aer. As
-a workaround, we use a regular loop to replace `jax.vmap` when running the 
-circuit on a noisy device.
+We encountered the following software limitation:
+- We found that `jax.vmap` is incompatible with the noise model in Qiskit Aer. As
+a workaround, we provide an option (as a parameter in the 
+[`__init__`](quantumgan/batch.py) function) to use a regular loop to 
+replace `jax.vmap` when running the circuit on a noisy device.
 
 # Contributions
 
@@ -92,5 +94,5 @@ circuit on a noisy device.
   - Created some code in the [hyperparameter search](scripts/plots.py) script to
     do it in parallel and persistently cache the results.
 - Bolong Tan 
-  -Wrote the Intoduction of the report.
-  -Double check the whole report follows the requirement.
+  - Wrote the Intoduction of the report.
+  - Double check the whole report follows the requirement.
