@@ -295,7 +295,7 @@ def create_plots(noise_graph, latex_backend):
             }
         )
 
-    fig, ax = plt.subplots(1, 4, sharey="row", figsize=(15, 4))
+    fig, ax = plt.subplots(1, 4, sharey="row", figsize=(12, 4))
     ax[0].set_title("Batch GAN (Ideal) FD score")
     ax[0].set_xlabel("Training iteration")
     ax[0].set_ylabel("FD score")
