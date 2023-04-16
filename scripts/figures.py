@@ -40,7 +40,7 @@ plt.close()
 def train_example(key):
     key, params_key = jr.split(key)
     features_dim = 4
-    batch_size = 1
+    batch_size = 2
 
     gen_params, dis_params = BatchGAN.init_params(
         params_key,
