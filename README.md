@@ -69,3 +69,5 @@ Before committing, remember to follow these steps:
 - `poetry run black quantumgan/`: format the code.
 - `poetry run flake8 quantumgan/`: run the linter.
 - `poetry run pytype quantumgan/`: run the static type checker.
+
+Statement of contribution: 
