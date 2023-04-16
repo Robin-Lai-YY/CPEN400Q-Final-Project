@@ -1,7 +1,15 @@
 \section{Reproducibility}
-Issues with reproducibility are fully described and assumptions that needed to be made are clearly laid out
 
-% N-e = 1000 but plots go up to 350? lol
+Unfortunately, we encountered multiple major issues regarding reproducibility:
+\begin{enumerate}
+    \item \textit{Missing hyper-parameters.} The paper did not provide some important hyperparameters (e.g. number of neurons, learning rate) for their classical generators. Rather, the paper only provides the total number of trainable parameters, and we are unable to come up with a set of hyperparameters that provides the exact same numbers of trainable parameters.
+    \item \textit{Fr\'echet distance (FD score).} There is no detailed discussion about how the trained GANs are scored.  They reference two papers
+    on the Fr\'echet/2-Wasserstein distance that are of relevance only to multivariate gaussian distributions, and their applicability to scoring
+    the samples generated from the batch GAN against the known, non-gaussian distribution the training examples are drawn from.  We were unable to exactly
+    reproduce the Fr\'echet distance scores that appear in the paper's box plots. Despite the efforts made, the Fr\'echet distance scores we obtained are still far from the paper's results.
+    \item \textit{Randomness.} We found the machine learning models used in the paper very sensitive to the random seed. We believe this might be an issue resulting from the small sizes of the models. 
+\end{enumerate}
+
 
 \subsection{Experimenting with actual quantum hardware}
 One of the key contributions of the paper is that the experiments were run on a real superconducting quantum processor. While we do not have access to the quantum device used by the authors, we learned that IBM Quantum is providing free access to their 7-qubit and 5-qubit QPUs through the Open Plan \cite{ibmq_plans}. The PennyLane-Qiskit plugin also provides a convenient ``qiskit.ibmq'' device to run our circuit on the IBMQ's hardware \cite{pennylane-qiskit}. 

@@ -11,6 +11,7 @@
 \usepackage{bm}
 \usepackage{float}
 \usepackage{amsfonts}
+\usepackage{minted}
 % \usepackage{euler-math}
 
 \usetikzlibrary{quantikz}
@@ -18,11 +19,11 @@
 \input{macros.tex}
 
 \setmainfont{TeX Gyre Pagella}
-\setmonofont{IBM Plex Mono}
+%\setmonofont{IBM Plex Mono}
 
 \addbibresource{cpen400q.bib}
 
-\title{CPEN 400Q project report\\
+\title{CPEN 400Q Project Report\\
   Experimental Quantum GANs}
 \author{Yuyou Lai, Juntong Luo, Sam Schweigel, Bolong Tan}
 \date{}
@@ -33,13 +34,15 @@
 
 \tableofcontents
 
+\pagebreak
 % \input{report-requirements.tex}
 \input{report/introduction.tex}
 \input{report/theory.tex}
 \input{report/results.tex}
-\input{report/reproducibility.tex}
 \input{report/framework.tex}
+\input{report/reproducibility.tex}
 
+\pagebreak
 
 \printbibliography
 
