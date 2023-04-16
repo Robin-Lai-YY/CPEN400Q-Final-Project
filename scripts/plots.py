@@ -34,7 +34,7 @@ def create_batch_gan(
     device=IdealDeviceJax,
     disable_jax_vmap=False,
 ):
-    features_dim = 4
+    features_dim = 3
 
     init_gen_params, init_dis_params = BatchGAN.init_params(
         params_key,
@@ -85,30 +85,16 @@ def evaluate_gan(key: jr.PRNGKeyArray, train_result: TrainResult):
 
 def train_and_evaluate(config):
     key = jr.PRNGKey(0)
-    seed, ty, train_config, kwargs = config
-    params_key, data_key, train_key, eval_key = jr.split(
-        jr.fold_in(key, seed), 4
-    )
-
-    match ty:
-        case "batch":
-            gan = create_batch_gan(params_key, **kwargs)
-            jit = True
-        case "mlp":
-            gan = create_mlp_gan(params_key, **kwargs)
-            jit = True
-        case "batch_noisy":
-            gan = create_batch_gan(
-                params_key, device=NoisyDevice, disable_jax_vmap=True, **kwargs
-            )
-            jit = False  # Avoid conversion between JAX arrays and python numpy arrays
+    seed, train_config, kwargs = config
+    params_key, data_key, train_key, eval_key = jr.split(jr.fold_in(key, seed), 4)
+    # try batch gan only
+    gan = create_batch_gan(params_key, **kwargs)
+    jit = True
 
     gen_optimizer = optax.sgd(train_config["gen_lr"])
     dis_optimizer = optax.sgd(train_config["dis_lr"])
 
-    train_data = generate_grayscale_bar(
-        data_key, train_config["iters"]
-    ).reshape(-1, train_config["batch_size"], 4)
+    train_data = generate_grayscale_bar(data_key, train_config["iters"]).reshape(-1, train_config["batch_size"], 3)
     train_result = train_gan(
         train_key,
         gan,
@@ -219,7 +205,7 @@ batchgan_noisy_conf1 = (
 
 def configuration_space(noise_graph):
     yield batchgan_conf1
-    yield mlpgan_conf1
+    # yield mlpgan_conf1
     if noise_graph:
         yield batchgan_noisy_conf1
 
@@ -246,7 +232,7 @@ def plot_fd(ax, filt, color, mediancolor, width):
     )
 
 
-def create_plots(noise_graph, latex_backend):
+def create_plots(latex_backend):
     if latex_backend:
         mpl.use("pgf")
         plt.rcParams.update(
@@ -268,28 +254,28 @@ def create_plots(noise_graph, latex_backend):
         width=0.5,
         mediancolor="lightskyblue",
     )
-    ax[1].set_title("Batch GAN (Noisy) FD score")
-    ax[1].set_xlabel("Training iteration")
-    ax[1].set_yscale("log")
-    if noise_graph:
-        plot_fd(
-            ax[1],
-            lambda c: c == batchgan_noisy_conf1,
-            color="yellowgreen",
-            width=0.5,
-            mediancolor="lightskyblue",
-        )
-    ax[2].set_title("MLP GAN FD score")
-    ax[2].set_xlabel("Training iteration")
-    ax[2].set_yscale("log")
-    plot_fd(
-        ax[2],
-        lambda c: c == mlpgan_conf1,
-        color="darkred",
-        width=0.5,
-        mediancolor="yellow",
-    )
-    fig.savefig("plots/fd_scores.pdf")
+    # ax[1].set_title("Batch GAN (Noisy) FD score")
+    # ax[1].set_xlabel("Training iteration")
+    # ax[1].set_yscale("log")
+    # if noise_graph:
+    #     plot_fd(
+    #         ax[1],
+    #         lambda c: c == batchgan_noisy_conf1,
+    #         color="yellowgreen",
+    #         width=0.5,
+    #         mediancolor="lightskyblue",
+    #     )
+    # ax[2].set_title("MLP GAN FD score")
+    # ax[2].set_xlabel("Training iteration")
+    # ax[2].set_yscale("log")
+    # plot_fd(
+    #     ax[2],
+    #     lambda c: c == mlpgan_conf1,
+    #     color="darkred",
+    #     width=0.5,
+    #     mediancolor="yellow",
+    # )
+    fig.savefig("plots/batch_gan.pdf")
 
 
 def parse():
@@ -339,4 +325,4 @@ if __name__ == "__main__":
                     config, data = r
                     db[dumps(config)] = data
 
-    create_plots(args.noise, args.latex)
+    create_plots(args.latex)
