@@ -70,4 +70,18 @@ Before committing, remember to follow these steps:
 - `poetry run flake8 quantumgan/`: run the linter.
 - `poetry run pytype quantumgan/`: run the static type checker.
 
-Statement of contribution: 
+# Contributions
+
+- Yuyou Lai
+- Juntong Luo
+- Sam Schweigel
+  - Wrote the initial JAX implementation of the [batch GAN](quantumgan/batch.py).
+  - Abstracted out the [GAN interface](quantumgan/gan.py) and made the [generic
+  training code](quantumgan/train.py).
+  - Wrote the code to evaluate the GAN's performance using the [Fréchet
+    distance](quantumgan/datasets.py).
+  - Wrote about some results, batch GAN theory, and created the quantkiz and
+    [other diagrams](scripts/figures.py) in the report.
+  - Created some code in the [hyperparameter search](scripts/plots.py) script to
+    do it in parallel and persistently cache the results.
+- Bolong Tan
