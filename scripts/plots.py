@@ -339,7 +339,7 @@ def create_plots(noise_graph, latex_backend):
         mediancolor="yellow",
     )
     fig.tight_layout()
-    fig.savefig("plots/fd_scores.pdf")
+    fig.savefig("report/plots/fd_scores.pdf")
 
 
 def parse():
