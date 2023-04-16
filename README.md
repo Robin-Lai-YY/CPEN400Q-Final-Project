@@ -72,6 +72,11 @@ circuit on a noisy device.
 # Contributions
 
 - Yuyou Lai
+  - Implemented classical GAN in python to understand how the networks work.
+  - Implemented quantum GAN (the patch method) in pennylane with teammates (reference: https://pennylane.ai/qml/demos/tutorial_quantum_gans.html)
+  - Modified some code in figures.py to generate  plots to visualize the loss over time with different index qubit.
+  - Helped debugging
+  - Wrote parts of Theory section of the Doc
 - Juntong Luo
   - Added index qubits to the batch GAN.
   - Modified the batch GAN to run on noisy devices and IBM Quantum's 
