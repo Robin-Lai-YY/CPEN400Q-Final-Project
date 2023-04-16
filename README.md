@@ -22,7 +22,6 @@ $ poetry install
 $ poetry run jupyterlab  # Run the demo notebooks
 $ poetry run python scripts/figures.py  # Reproduce the report figures
 $ poetry run python scripts/figures_index.py  # Reproduce the report figures
-
 ```
 
 If you have a lot of CPU cores and time, you can also generate the bar plots 
