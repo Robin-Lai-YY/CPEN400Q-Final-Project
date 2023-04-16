@@ -17,12 +17,12 @@ class GAN(eqx.Module, metaclass=ABCMeta):
     gradients with respect to.  (See Equinox's filter_grad).
 
     Attributes:
-      latent_shape: PyTree of parameters for the latent_shape.
+      latent_shape: The latent_shape.
       gen_params: PyTree of parameters for the generator.
       dis_params: PyTree of parameters for the discriminator.
     """
 
-    latent_shape: PyTree
+    latent_shape: tuple[int] = eqx.static_field(repr=False, compare=False)
     gen_params: PyTree
     dis_params: PyTree
 
