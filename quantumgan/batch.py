@@ -79,13 +79,13 @@ class BatchGAN(GAN):
         def format_wires(name: str, num: int):
             return tuple(name + str(i) for i in range(num))
 
-        n_features = int(jnp.log2(features_dim))
+        n_features = round(jnp.log2(features_dim))
         _gen_ancillary = gen_params.shape[1] - n_features
         _dis_ancillary = dis_params.shape[1] - n_features
 
-        self._index_reg = format_wires("i", int(jnp.log2(batch_size)))
+        self._index_reg = format_wires("i", round(jnp.log2(batch_size)))
         self._gen_ancillary = format_wires("ag", _gen_ancillary)
-        self._feature_reg = format_wires("f", int(jnp.log2(features_dim)))
+        self._feature_reg = format_wires("f", round(jnp.log2(features_dim)))
         self._dis_ancillary = format_wires("ad", _dis_ancillary)
 
         wires = (
@@ -260,4 +260,4 @@ class BatchGAN(GAN):
 
 def is_p2(x: int) -> bool:
     """Returns true if the argument is a power of 2."""
-    return jnp.isclose(jnp.log2(x), 2 ** jnp.log2(x))
+    return x & (x-1) == 0
