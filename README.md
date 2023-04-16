@@ -57,11 +57,6 @@ The scripts used for generating the data in the report are in `scripts/`.  These
 are not part of the public API, but might be interesting regardless, as examples
 of how the library can be used.
 
-## Software Limitations
-We found that `jax.vmap` is incompatible with the noise model in Qiskit Aer. As
-a workaround, we use a regular loop to replace `jax.vmap` when running the 
-circuit on a noisy device.
-
 ### Development notes
 
 Before committing, remember to follow these steps:
@@ -70,10 +65,23 @@ Before committing, remember to follow these steps:
 - `poetry run flake8 quantumgan/`: run the linter.
 - `poetry run pytype quantumgan/`: run the static type checker.
 
+# Software Limitations
+We found that `jax.vmap` is incompatible with the noise model in Qiskit Aer. As
+a workaround, we use a regular loop to replace `jax.vmap` when running the 
+circuit on a noisy device.
+
 # Contributions
 
 - Yuyou Lai
 - Juntong Luo
+  - Added index qubits to the batch GAN.
+  - Modified the batch GAN to run on noisy devices and IBM Quantum's 
+    real hardware.
+  - Implemented the classical GAN with CNN generator, and worked on figuring 
+    out the architecture of the classical GANs in the paper.
+  - Worked on scripts for generating some of the plots in the Results section 
+    and wrote parts of the Software and the Reproducibility section.
+  - Helped debugging the batch GAN and the Fréchet distance.
 - Sam Schweigel
   - Wrote the initial JAX implementation of the [batch GAN](quantumgan/batch.py).
   - Abstracted out the [GAN interface](quantumgan/gan.py) and made the [generic
