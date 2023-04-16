@@ -101,3 +101,4 @@ replace `jax.vmap` when running the circuit on a noisy device.
 - Bolong Tan 
   - Wrote the Intoduction of the report.
   - Double check the whole report follows the requirement.
+  - Helped debugging.
