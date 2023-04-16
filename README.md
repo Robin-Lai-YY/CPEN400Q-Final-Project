@@ -84,4 +84,6 @@ Before committing, remember to follow these steps:
     [other diagrams](scripts/figures.py) in the report.
   - Created some code in the [hyperparameter search](scripts/plots.py) script to
     do it in parallel and persistently cache the results.
-- Bolong Tan
+- Bolong Tan 
+  -Wrote the Intoduction of the report.
+  -Double check the whole report follows the requirement.
