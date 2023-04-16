@@ -59,10 +59,11 @@ def create_batch_gan(
 
 def create_mlp_gan(
     params_key: jr.PRNGKeyArray,
+    latent_shape,
     gen_hidden,
     dis_hidden,
 ):
-    gan = BarMLPGAN(params_key, gen_hidden, dis_hidden)
+    gan = BarMLPGAN(params_key, latent_shape, gen_hidden, dis_hidden)
     return gan
 
 
@@ -124,6 +125,51 @@ def train_and_evaluate(config):
 
 mlpgan_conf1 = (
     "mlp",
+    {
+        "iters": 350,
+        "batch_size": 1,
+        "gen_lr": 0.05,
+        "dis_lr": 0.001,
+    },
+    {
+        "latent_shape": 1,
+        "gen_hidden": 1,
+        "dis_hidden": [20, 10],
+    },
+)
+
+mlpgan_conf2 = (
+    "mlp",
+    {
+        "iters": 350,
+        "batch_size": 1,
+        "gen_lr": 0.05,
+        "dis_lr": 0.001,
+    },
+    {
+        "latent_shape": 2,
+        "gen_hidden": 2,
+        "dis_hidden": [20, 10],
+    },
+)
+
+mlpgan_conf3 = (
+    "mlp",
+    {
+        "iters": 350,
+        "batch_size": 1,
+        "gen_lr": 0.05,
+        "dis_lr": 0.001,
+    },
+    {
+        "latent_shape": 2,
+        "gen_hidden": 8,
+        "dis_hidden": [20, 10],
+    },
+)
+
+cnngan_conf1 = (
+    "cnn",
     {
         "iters": 350,
         "batch_size": 1,
@@ -252,8 +298,7 @@ def parse():
     )
     parser.add_argument(
         "--noise",
-        required=True,
-        type=bool,
+        action="store_true",
         help="include plots for the noisy device",
     )
     parser.add_argument(
@@ -267,6 +312,8 @@ def parse():
 
 if __name__ == "__main__":
     args = parse()
+    if not args.noise:
+        print("Skipping plots for the noisy device")
     training_runs = 10
     jobs = []
 

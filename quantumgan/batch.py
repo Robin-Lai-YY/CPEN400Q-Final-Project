@@ -70,7 +70,6 @@ class BatchGAN(GAN):
           diff_method: The method of differentiation of QNodes
           disable_jax_vmap: Whether to avoid using jax.vmp, which sometimes has compatibility issues with Qiskit
         """
-        super().__init__(gen_params, dis_params)
         assert is_p2(features_dim), "Feature dimension must be a power of 2"
         assert is_p2(batch_size), "Batch size must be a power of 2"
 
@@ -95,6 +94,13 @@ class BatchGAN(GAN):
             + self._index_reg
             + self._feature_reg
         )
+
+        latent_shape = (
+            len(self._gen_ancillary)
+            + len(self._feature_reg)
+            + len(self._index_reg),
+        )
+        super().__init__(latent_shape, gen_params, dis_params)
 
         self._qdev = device(wires)
         self._qnode_train_fake = qml.QNode(
@@ -130,7 +136,9 @@ class BatchGAN(GAN):
             + len(self._feature_reg)
             + len(self._index_reg)
         )
-        return jr.uniform(key, (batch, size), minval=0, maxval=jnp.pi / 2)
+        return jr.uniform(
+            key, (batch,) + self.latent_shape, minval=0, maxval=jnp.pi / 2
+        )
 
     def train_fake(
         self, latent: Float[Array, "batch latent"]
