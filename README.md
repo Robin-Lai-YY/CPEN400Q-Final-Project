@@ -21,12 +21,14 @@ easy:
 $ poetry install
 $ poetry run jupyterlab  # Run the demo notebooks
 $ poetry run python scripts/figures.py  # Reproduce the report figures
+$ poetry run python scripts/figures_index.py  # Reproduce the report figures
 
 ```
 
-If you have a lot of CPU cores and time, you can also generate the bar plots:
+If you have a lot of CPU cores and time, you can also generate the bar plots 
+(the `--noise` flag is optional; it depends on a device that does not support JAX so it is very slow):
 ```
-$ poetry run python scripts/plots.py  # Reproduce the report bar plots
+$ poetry run python scripts/plots.py --noise # Reproduce the report bar plots
 ```
 
 If your python environment looks like [this](https://xkcd.com/1987/), a container
@@ -54,6 +56,11 @@ Public APIs have docstrings, while private methods start with `_` and do not.
 The scripts used for generating the data in the report are in `scripts/`.  These
 are not part of the public API, but might be interesting regardless, as examples
 of how the library can be used.
+
+## Software Limitations
+We found that `jax.vmap` is incompatible with the noise model in Qiskit Aer. As
+a workaround, we use a regular loop to replace `jax.vmap` when running the 
+circuit on a noisy device.
 
 ### Development notes
 
