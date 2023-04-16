@@ -17,7 +17,7 @@ from collections import defaultdict
 
 from quantumgan.gan import GAN
 from quantumgan.batch import BatchGAN
-from quantumgan.classical import BarMLPGAN
+from quantumgan.classical import BarMLPGAN, BarCNNGAN
 from quantumgan.datasets import generate_grayscale_bar, frechet_distance
 from quantumgan.train import train_gan, TrainResult
 from quantumgan.ideal_device import IdealDeviceJax
@@ -63,8 +63,15 @@ def create_mlp_gan(
     gen_hidden,
     dis_hidden,
 ):
-    gan = BarMLPGAN(params_key, latent_shape, gen_hidden, dis_hidden)
-    return gan
+    return BarMLPGAN(params_key, latent_shape, gen_hidden, dis_hidden)
+
+
+def create_cnn_gan(
+    params_key: jr.PRNGKeyArray,
+    channels_hidden,
+    dis_hidden,
+):
+    return BarCNNGAN(params_key, channels_hidden, dis_hidden)
 
 
 def evaluate_gan(key: jr.PRNGKeyArray, train_result: TrainResult):
@@ -96,6 +103,9 @@ def train_and_evaluate(config):
             jit = True
         case "mlp":
             gan = create_mlp_gan(params_key, **kwargs)
+            jit = True
+        case "cnn":
+            gan = create_cnn_gan(params_key, **kwargs)
             jit = True
         case "batch_noisy":
             gan = create_batch_gan(
@@ -177,7 +187,35 @@ cnngan_conf1 = (
         "dis_lr": 0.001,
     },
     {
-        "gen_hidden": 3,
+        "channels_hidden": 2,
+        "dis_hidden": [20, 10],
+    },
+)
+
+cnngan_conf2 = (
+    "cnn",
+    {
+        "iters": 350,
+        "batch_size": 1,
+        "gen_lr": 0.05,
+        "dis_lr": 0.001,
+    },
+    {
+        "channels_hidden": 3,
+        "dis_hidden": [20, 10],
+    },
+)
+
+cnngan_conf3 = (
+    "cnn",
+    {
+        "iters": 350,
+        "batch_size": 8,
+        "gen_lr": 0.05,
+        "dis_lr": 0.001,
+    },
+    {
+        "channels_hidden": 4,
         "dis_hidden": [20, 10],
     },
 )
@@ -220,6 +258,7 @@ batchgan_noisy_conf1 = (
 def configuration_space(noise_graph):
     yield batchgan_conf1
     yield mlpgan_conf1
+    yield cnngan_conf1
     if noise_graph:
         yield batchgan_noisy_conf1
 
@@ -256,7 +295,7 @@ def create_plots(noise_graph, latex_backend):
             }
         )
 
-    fig, ax = plt.subplots(1, 3, sharey="row", figsize=(10, 4))
+    fig, ax = plt.subplots(1, 4, sharey="row", figsize=(15, 4))
     ax[0].set_title("Batch GAN (Ideal) FD score")
     ax[0].set_xlabel("Training iteration")
     ax[0].set_ylabel("FD score")
@@ -285,10 +324,21 @@ def create_plots(noise_graph, latex_backend):
     plot_fd(
         ax[2],
         lambda c: c == mlpgan_conf1,
-        color="darkred",
+        color="orange",
         width=0.5,
         mediancolor="yellow",
     )
+    ax[3].set_title("CNN GAN FD score")
+    ax[3].set_xlabel("Training iteration")
+    ax[3].set_yscale("log")
+    plot_fd(
+        ax[3],
+        lambda c: c == cnngan_conf1,
+        color="purple",
+        width=0.5,
+        mediancolor="yellow",
+    )
+    fig.tight_layout()
     fig.savefig("plots/fd_scores.pdf")
 
 
